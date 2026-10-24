@@ -1,8 +1,7 @@
 import type { NextConfig } from 'next'
 
-const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
-  ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname
-  : 'example.supabase.co'
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
+const supabaseHost = supabaseUrl ? new URL(supabaseUrl).hostname : 'example.supabase.co'
 
 const nextConfig: NextConfig = {
   images: {
