@@ -1,9 +1,9 @@
 // Registers this site's webhook with Revolut and prints the signing secret to put in REVOLUT_WEBHOOK_SECRET.
-// Usage: node --env-file=.env.local scripts/create-revolut-webhook.mjs https://your-domain.co.uk
+// Usage: node --env-file=.env.local scripts/create-revolut-webhook.mjs https://www.ozziestable.com
 const site = (process.argv[2] || process.env.NEXT_PUBLIC_SITE_URL || '').replace(/\/$/, '')
 const key = process.env.REVOLUT_SECRET_KEY
 const mode = process.env.NEXT_PUBLIC_REVOLUT_MODE === 'prod' ? 'prod' : 'sandbox'
-if (!site.startsWith('https://')) throw new Error('Pass the public https address of the site, e.g. https://ozziestable.co.uk')
+if (!site.startsWith('https://')) throw new Error('Pass the public https address of the site, e.g. https://www.ozziestable.com')
 if (!key) throw new Error('Set REVOLUT_SECRET_KEY first')
 const base = mode === 'prod' ? 'https://merchant.revolut.com' : 'https://sandbox-merchant.revolut.com'
 const res = await fetch(`${base}/api/1.0/webhooks`, {

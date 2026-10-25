@@ -36,9 +36,9 @@ You need accounts with **Supabase**, **Revolut Business** (with online payments/
 1. In Revolut Business, open **Merchant → API** and copy the **public key** and **secret key**. Start with the **Sandbox** keys.
 2. After the first deploy, register the webhook:
    ```bash
-   npm run revolut:webhook -- https://your-domain.co.uk
+   npm run revolut:webhook -- https://www.ozziestable.com
    ```
-   Put the printed signing secret in `REVOLUT_WEBHOOK_SECRET`. (You can also add the webhook in the Revolut dashboard pointing at `https://your-domain.co.uk/api/webhooks/revolut` with the order events, and copy its signing secret.)
+   Put the printed signing secret in `REVOLUT_WEBHOOK_SECRET`. (You can also add the webhook in the Revolut dashboard pointing at `https://www.ozziestable.com/api/webhooks/revolut` with the order events, and copy its signing secret.)
 3. **Apple Pay** needs the live domain registered with Revolut (Merchant → Apple Pay domains). Apple Pay can't be tested in sandbox; check it with a small live payment and refund it.
 4. Choose which payment methods appear (cards, Apple Pay, Google Pay, Revolut Pay) in the Revolut Business dashboard.
 
@@ -64,8 +64,8 @@ Locally the webhook can't reach you, so the confirmation page asks Revolut direc
 ### 6. Create the owner's sign-in
 
 ```bash
-npm run staff:add -- owner@ozziestable.co.uk "a-long-unique-password" owner
-npm run staff:add -- kitchen@ozziestable.co.uk "another-long-password" kitchen
+npm run staff:add -- owner@ozziestable.com "a-long-unique-password" owner
+npm run staff:add -- kitchen@ozziestable.com "another-long-password" kitchen
 ```
 
 On first sign-in at `/admin`, each person scans a QR code with an authenticator app. After that, every sign-in needs the 6-digit code. Kitchen accounts see orders and production lists only: no revenue, prices or refunds.

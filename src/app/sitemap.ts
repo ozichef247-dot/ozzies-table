@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import { getPublicMenu } from '@/lib/data'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000').replace(/\/$/, '')
+  const base = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.ozziestable.com').replace(/\/$/, '')
   const { products } = await getPublicMenu()
   return [
     { url: `${base}/`, changeFrequency: 'weekly', priority: 1 },

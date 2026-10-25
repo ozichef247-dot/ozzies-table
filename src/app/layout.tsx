@@ -15,7 +15,7 @@ const karla = Karla({ subsets: ['latin'], variable: '--font-karla', display: 'sw
 export async function generateMetadata(): Promise<Metadata> {
   const { content } = await getSettings()
   return {
-    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://www.ozziestable.com'),
     title: { default: content.seo.home.title, template: '%s' },
     description: content.seo.home.description,
     openGraph: { siteName: 'Ozzie’s Table', locale: 'en_GB', type: 'website' },
