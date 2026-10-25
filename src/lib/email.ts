@@ -1,5 +1,6 @@
 import 'server-only'
 import { db } from './supabase/admin'
+import { getSettings } from './data'
 import { env } from './env'
 import type { ContentSettings, GeneralSettings, Order, OrderItem } from './types'
 import { itemMeta } from './pricing'
@@ -38,10 +39,13 @@ export async function sendMessage(m: Message) {
     return
   }
   try {
+    // Replies go to the owner's order email (set in Dashboard → Delivery), not the sending address.
+    const { general } = await getSettings()
+    const replyTo = general.contact.email && general.contact.email !== m.to ? [general.contact.email] : undefined
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: env.emailFrom(), to: [m.to], subject: m.subject, text: m.text, html: toHtml(m.text) }),
+      body: JSON.stringify({ from: env.emailFrom(), to: [m.to], reply_to: replyTo, subject: m.subject, text: m.text, html: toHtml(m.text) }),
     })
     if (!res.ok) throw new Error(`${res.status} ${(await res.text()).slice(0, 200)}`)
     await db().from('notifications').insert({ ...record, status: 'sent' })
