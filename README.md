@@ -84,7 +84,7 @@ Import the GitHub repository, set the environment variables, and deploy. `vercel
 - [ ] Delivery zones, fees, minimum, free-delivery threshold, collection address, phone and WhatsApp set in **Delivery**
 - [ ] Policies, allergen wording, food hygiene rating and company details saved in **Content → Policies and legal**
 - [ ] Page titles and descriptions checked in **Content → Search engines**
-- [ ] Revolut **live** keys set, `NEXT_PUBLIC_REVOLUT_MODE=prod`, live webhook registered, Apple Pay domain registered
+- [ ] Revolut **live** keys set, `REVOLUT_MODE=prod`, live webhook registered, Apple Pay domain registered
 - [ ] Resend domain verified; a test order's confirmation email received
 - [ ] Test order placed, captured, then refunded from the dashboard
 - [ ] Supabase backups confirmed (daily backups are included on paid plans; enable point-in-time recovery if needed)

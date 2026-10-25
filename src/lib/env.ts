@@ -14,7 +14,9 @@ export const env = {
   // Names set by the Vercel–Supabase integration are accepted as well as our own.
   supabaseAnonKey: () => required('NEXT_PUBLIC_SUPABASE_ANON_KEY', 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'SUPABASE_ANON_KEY', 'SUPABASE_PUBLISHABLE_KEY'),
   supabaseServiceKey: () => required('SUPABASE_SERVICE_ROLE_KEY', 'SUPABASE_SECRET_KEY'),
-  revolutMode: () => (process.env.NEXT_PUBLIC_REVOLUT_MODE === 'prod' ? 'prod' : 'sandbox') as 'prod' | 'sandbox',
+  // Revolut settings work with or without the NEXT_PUBLIC_ prefix; the server passes the public key to the payment form.
+  revolutMode: () => ((process.env.REVOLUT_MODE || process.env.NEXT_PUBLIC_REVOLUT_MODE) === 'prod' ? 'prod' : 'sandbox') as 'prod' | 'sandbox',
+  revolutPublicKey: () => process.env.REVOLUT_PUBLIC_KEY || process.env.NEXT_PUBLIC_REVOLUT_PUBLIC_KEY || '',
   revolutSecret: () => required('REVOLUT_SECRET_KEY'),
   revolutWebhookSecret: () => process.env.REVOLUT_WEBHOOK_SECRET || '',
   resendKey: () => process.env.RESEND_API_KEY || '',

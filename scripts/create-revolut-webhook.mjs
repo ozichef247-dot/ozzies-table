@@ -2,7 +2,7 @@
 // Usage: node --env-file=.env.local scripts/create-revolut-webhook.mjs https://www.ozziestable.com
 const site = (process.argv[2] || process.env.NEXT_PUBLIC_SITE_URL || '').replace(/\/$/, '')
 const key = process.env.REVOLUT_SECRET_KEY
-const mode = process.env.NEXT_PUBLIC_REVOLUT_MODE === 'prod' ? 'prod' : 'sandbox'
+const mode = (process.env.REVOLUT_MODE || process.env.NEXT_PUBLIC_REVOLUT_MODE) === 'prod' ? 'prod' : 'sandbox'
 if (!site.startsWith('https://')) throw new Error('Pass the public https address of the site, e.g. https://www.ozziestable.com')
 if (!key) throw new Error('Set REVOLUT_SECRET_KEY first')
 const base = mode === 'prod' ? 'https://merchant.revolut.com' : 'https://sandbox-merchant.revolut.com'
