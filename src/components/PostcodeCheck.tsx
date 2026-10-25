@@ -50,9 +50,11 @@ export function PostcodeCheck({ variant }: { variant: 'panel' | 'bar' }) {
 
   const id = variant === 'bar' ? 'pc-bar' : 'pc-panel'
   return (
-    <div className={variant === 'bar' ? 'pcbar' : 'stack'} style={{ ['--g' as string]: '12px' }}>
+    <section className={variant === 'bar' ? 'pcbar' : 'stack'} style={{ ['--g' as string]: '12px' }} aria-labelledby={`${id}-title`}>
+      {variant === 'bar' ? <h2 id={`${id}-title`}>Do we deliver to you?</h2> : <span id={`${id}-title`} className="vh">Check delivery area</span>}
+      <p className="small muted">Enter your postcode to see the delivery charge, minimum order and the next dates you can book. Outside our area? You can still collect.</p>
       <form onSubmit={check} className="fld">
-        <label htmlFor={id} style={{ fontWeight: 700 }}>{variant === 'bar' ? 'Check delivery to your postcode' : 'Your postcode'}</label>
+        <label htmlFor={id} style={{ fontWeight: 700 }}>Your postcode</label>
         <div className="row" style={{ flexWrap: 'nowrap' }}>
           <input id={id} className="inp grow" value={value} onChange={(e) => setValue(e.target.value)} placeholder="e.g. PE1 2AB" autoComplete="postal-code" style={{ textTransform: 'uppercase' }} />
           <button className="btn btn-ink btn-sm" disabled={busy}>{busy ? <span className="spinner" aria-label="Checking" /> : 'Check'}</button>
@@ -89,6 +91,6 @@ export function PostcodeCheck({ variant }: { variant: 'panel' | 'bar' }) {
           <p className="err" role="alert">{res.message}</p>
         )
       ) : null}
-    </div>
+    </section>
   )
 }

@@ -55,7 +55,7 @@ export default async function Content({ searchParams }: { searchParams: Promise<
       <div className="panel stack" style={G('16px')}>
         <h3>Images</h3>
         <ImageField which="logo" label="Logo" hint="Shown on the green header, so use a light or white version. PNG or SVG with a transparent background works best. Until one is uploaded, the name is set in the heading font." src={c.logo} ratio="3/1" />
-        <ImageField which="heroPhoto" label="Hero photo" hint="Oha, egusi, ugba and jollof in bowls. Cropped to 3:2." src={c.heroPhoto} ratio="3/2" />
+        <ImageField which="heroPhoto" label="Hero photo" hint="Oha, egusi, ugba and jollof in bowls. Cropped to 3:2; on phones a little is trimmed from the top and bottom, so keep the bowls near the middle." src={c.heroPhoto} ratio="3/2" />
         <ImageField which="storyPhoto" label="Our story photo" hint="Ozzie or the kitchen. Cropped to 4:3." src={c.storyPhoto} ratio="4/3" />
       </div>
 

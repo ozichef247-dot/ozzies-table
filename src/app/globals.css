@@ -82,10 +82,21 @@ footer .row button{border:0;background:none;color:var(--on-green);font-weight:60
 .ph-empty svg{width:28%;max-width:120px;height:auto}
 .ph-empty span{font-size:.72rem;font-weight:600;letter-spacing:.04em;text-align:center;padding:1px 8px;background:var(--cream-2);border-radius:6px}
 
-.hero{padding-block:0 28px}
-.hero-ph{border-radius:0 0 22px 22px;overflow:hidden}
-@media (min-width:700px){.hero-ph{border-radius:22px;margin:24px 32px 0}}
-.hero-copy{display:flex;flex-direction:column;gap:16px;padding-top:26px;max-width:42rem}
+.hero{padding-block:16px 28px}
+/* Brief: within one screen a visitor sees what is sold, that it's cooked to order, and the two buttons.
+   Phones: a shorter photo above the text. Wider screens: text and photo side by side. */
+.hero-grid{display:grid;gap:22px;align-items:center}
+.hero-ph{border-radius:16px;overflow:hidden}
+.hero-ph .ph{aspect-ratio:16/9 !important;max-height:34vh}
+.hero-copy{display:flex;flex-direction:column;gap:16px;max-width:42rem;min-width:0}
+@media (min-width:900px){
+  .hero{padding-block:36px 40px}
+  .hero-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:48px}
+  .hero-ph{order:2;border-radius:22px}
+  .hero-ph .ph{aspect-ratio:4/3 !important;max-height:none}
+  .hero-copy{order:1}
+  .hero h1{font-size:clamp(2.4rem,4.2vw,3.6rem)}
+}
 .hero .lede{font-size:1.12rem;color:var(--muted)}
 .next{display:flex;gap:14px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;max-width:34rem}
 .cal{flex:none;width:54px;border-radius:10px;overflow:hidden;text-align:center;border:1px solid var(--line-2);background:var(--card)}
@@ -139,7 +150,8 @@ footer .row button{border:0;background:none;color:var(--on-green);font-weight:60
 .pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:3px 9px;font-size:.74rem;font-weight:700;line-height:1.4;white-space:nowrap;background:var(--cream-3);color:var(--ink)}
 .pill.ok{background:var(--ok-bg);color:var(--ok)} .pill.warn{background:var(--warn-bg);color:var(--warn)} .pill.bad{background:var(--bad-bg);color:var(--bad)}
 .pill.info{background:var(--info-bg);color:var(--info)} .pill.muted{background:var(--cream-3);color:var(--muted)} .pill.solid{background:var(--card);box-shadow:var(--shadow)}
-.pcbar{display:flex;flex-direction:column;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
+.pcbar{display:flex;flex-direction:column;gap:10px;background:var(--cream-2);border:1.5px solid var(--line-2);border-left:5px solid var(--gold);border-radius:var(--r);padding:16px 18px}
+.pcbar h2{font-size:1.25rem}
 
 .scrim{position:fixed;inset:0;background:var(--scrim);z-index:50;display:flex;align-items:flex-end;justify-content:center;animation:fade .2s ease}
 .sheet{background:var(--cream);width:100%;max-width:640px;max-height:93vh;border-radius:22px 22px 0 0;display:flex;flex-direction:column;animation:up .25s ease;overflow:hidden}
@@ -332,7 +344,9 @@ fieldset.plain{border:0;padding:0;margin:0;min-width:0}
 #revolut-checkout{min-height:120px}
 .ph{aspect-ratio:var(--ratio,4/3)}
 .ph img{position:absolute;inset:0}
-dialog.sheet{margin:auto auto 0;max-height:93vh}
+dialog.sheet{margin:auto auto 0;max-height:93vh;padding:0;border:0}
+/* A closed dialog must stay hidden: .sheet's display:flex would otherwise show it in the page. */
+dialog.sheet:not([open]){display:none}
 dialog.sheet::backdrop{background:var(--scrim)}
 @media (min-width:700px){dialog.sheet{margin:auto}}
 .chip{color:var(--ink);text-decoration:none}

@@ -22,8 +22,8 @@ export default async function Home() {
   return (
     <>
       <section className="hero">
-        <div className="hero-ph"><Photo src={content.heroPhoto} alt="Oha, egusi, ugba and jollof served in bowls" ratio="3/2" sizes="(min-width: 1140px) 1080px, 100vw" priority /></div>
-        <div className="wrap">
+        <div className="wrap hero-grid">
+          <div className="hero-ph"><Photo src={content.heroPhoto} alt="Oha, egusi, ugba and jollof served in bowls" ratio="3/2" sizes="(min-width: 900px) 50vw, 100vw" priority /></div>
           <div className="hero-copy">
             <p className="rule eyebrow">{content.themeLine}</p>
             <h1>{content.headline}</h1>
