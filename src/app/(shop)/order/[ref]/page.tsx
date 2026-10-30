@@ -9,6 +9,7 @@ import { LIVE_STATUSES } from '@/lib/types'
 import { fmtDate } from '@/lib/time'
 import { money } from '@/lib/money'
 import { SummaryLines } from '@/components/OrderSummary'
+import { DEFAULT_OFFLINE_NOTE } from '@/lib/email'
 import { ContactBlock } from '@/components/ContactBlock'
 import { StatusPoller } from '@/components/StatusPoller'
 
@@ -23,12 +24,13 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
   const [{ ref }, { t = '' }] = await Promise.all([params, searchParams])
   let o = await load(ref, t)
   if (!o) notFound()
-  if (o.payment_status !== 'paid' && o.status !== 'cancelled') {
+  if (o.revolut_order_id && o.payment_status !== 'paid' && o.status !== 'cancelled') {
     await reconcile(o)
     o = (await load(ref, t))!
   }
   const { general } = await getSettings()
-  const confirmed = (LIVE_STATUSES as string[]).includes(o.status) && o.payment_status !== 'pending'
+  const confirmed = (LIVE_STATUSES as string[]).includes(o.status)
+  const paid = o.payment_status === 'paid'
   const how = general.notify.sms ? 'text and email' : 'email'
   const promise = o.method === 'delivery'
     ? general.notify.out ? `We’ll ${how} you when your order leaves the kitchen.` : ''
@@ -69,9 +71,10 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
       <div className="wrap two">
         <div className="stack" style={{ ['--g' as string]: '18px' }}>
           <div className="conf-hd">
-            <p className="rule eyebrow">Order confirmed</p>
-            <h1 style={{ fontSize: 'clamp(1.9rem,6vw,2.7rem)' }}>Thank you, {o.customer_first}. Your order is booked.</h1>
-            <div className="row"><span className="ref">{o.ref}</span><span className="pill ok">Paid</span></div>
+            <p className="rule eyebrow">{paid ? 'Order confirmed' : 'Order received'}</p>
+            <h1 style={{ fontSize: 'clamp(1.9rem,6vw,2.7rem)' }}>Thank you, {o.customer_first}. {paid ? 'Your order is booked.' : 'We’ve received your order.'}</h1>
+            <div className="row"><span className="ref">{o.ref}</span><span className="pill ok">{paid ? 'Paid' : 'Received'}</span></div>
+            {paid ? null : <p className="muted">{general.offlinePaymentNote || DEFAULT_OFFLINE_NOTE} Please keep your order number.</p>}
           </div>
           <div className="panel stack" style={{ ['--g' as string]: '12px' }}>
             <h3>{o.method === 'delivery' ? 'Delivery' : 'Collection'}</h3>
@@ -90,7 +93,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
             <p className="small muted">Changes and full refunds are possible up to {general.cancelHours} hours before your slot. Quote <b style={{ color: 'var(--ink)' }}>{o.ref}</b>.</p>
             <ContactBlock g={general} orderRef={o.ref} />
           </div>
-          <p className="small muted">A confirmation has been emailed to <b style={{ color: 'var(--ink)' }}>{o.customer_email}</b>.</p>
+          {paid ? <p className="small muted">A confirmation has been emailed to <b style={{ color: 'var(--ink)' }}>{o.customer_email}</b>.</p> : null}
           <div><Link className="btn btn-line" href="/menu">Back to menu</Link></div>
         </div>
         <div className="aside">
@@ -100,7 +103,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
             <div className="sumrow" style={{ borderTop: '1px solid var(--line)', marginTop: 6, paddingTop: 8 }}><span>Subtotal</span><span className="num">{money(o.subtotal_pence)}</span></div>
             {o.discount_pence ? <div className="sumrow"><span>Discount ({o.promo_code})</span><span className="num">−{money(o.discount_pence)}</span></div> : null}
             <div className="sumrow"><span>{o.method === 'delivery' ? 'Delivery' : 'Collection'}</span><span className="num">{o.delivery_fee_pence ? money(o.delivery_fee_pence) : 'Free'}</span></div>
-            <div className="sumrow total"><span>Paid</span><span className="num">{money(o.total_pence)}</span></div>
+            <div className="sumrow total"><span>{paid ? 'Paid' : 'Total to pay'}</span><span className="num">{money(o.total_pence)}</span></div>
             {o.payment_method ? <p className="small muted">{o.payment_method}</p> : null}
           </div>
         </div>

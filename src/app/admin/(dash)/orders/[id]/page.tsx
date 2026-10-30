@@ -12,7 +12,7 @@ import { ItemMeta } from '@/components/OrderSummary'
 import { Flash, G, StatusPill } from '@/components/admin/ui'
 import { advanceOrderAction, cancelOrderAction, moveOrderAction, refundAction, saveInternalNote } from '../../../actions'
 
-const PAY: Record<string, string> = { pending: 'Not paid yet', authorised: 'Authorised, not yet taken', paid: 'Paid', refunded: 'Refunded', partially_refunded: 'Partly refunded', voided: 'Released, not charged', failed: 'Payment attempt failed' }
+const PAY: Record<string, string> = { pending: 'Not paid online. Arrange payment with the customer', authorised: 'Authorised, not yet taken', paid: 'Paid', refunded: 'Refunded', partially_refunded: 'Partly refunded', voided: 'Released, not charged', failed: 'Payment attempt failed' }
 
 export default async function OrderDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ ok?: string; error?: string; confirm?: string }> }) {
   const [{ id }, sp] = await Promise.all([params, searchParams])

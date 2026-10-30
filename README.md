@@ -2,11 +2,20 @@
 
 Online pre-ordering for Ozzie's Table, a Nigerian home-cooking kitchen in Peterborough. Customers choose dishes by the bowl (2–5 litres), book a collection or delivery slot at least 48 hours ahead, and pay online. The owner runs everything from a dashboard at `/admin`.
 
-**Stack:** Next.js 16 (App Router) · Supabase (Postgres, sign-in with two-step codes, photo storage) · Revolut Merchant API (cards, Apple Pay, Google Pay, Revolut Pay) · Resend (email) · hosted on Vercel.
+**Stack:** Next.js 16 (App Router) · Supabase (Postgres, sign-in by emailed code, photo storage) · Revolut Merchant API (cards, Apple Pay, Google Pay, Revolut Pay; switched off for now) · Resend (email) · hosted on Vercel.
 
 ---
 
-## How ordering works (and why it's safe)
+## Online payment is switched off for now
+
+The client has chosen to launch without online payment. With `PAYMENTS_ENABLED` unset (or `false`):
+
+- Checkout ends with **Place order**. The order is checked and priced on the server, its slot is booked straight away, and it appears in the dashboard.
+- The full order and customer details are emailed to the **order email** set in Dashboard → Delivery. Replying to that email writes to the customer.
+- Customers see the payment message set in Dashboard → Delivery → Payment (for example how and when to pay).
+- No Revolut keys are needed. Everything below about Revolut applies only when `PAYMENTS_ENABLED=true`.
+
+## How ordering works with online payment (and why it's safe)
 
 1. **The browser only sends choices.** Dish, size, protein, seasoning, quantity, date and slot. Every price, notice period, delivery fee, minimum order and capacity check is recalculated on the server (`src/lib/orders.ts → startCheckout`).
 2. **The slot is held while the customer pays.** `reserve_order()` in Postgres takes a per-date lock, counts confirmed orders plus live holds, and refuses if the slot or day is full. The hold lasts 10 minutes (owner can change this).
@@ -28,10 +37,14 @@ You need accounts with **Supabase**, **Revolut Business** (with online payments/
 2. **SQL editor:** run `supabase/migrations/20261024000000_init.sql`, then `supabase/seed.sql`. (Or with the Supabase CLI: `supabase link` then `supabase db push`, and run the seed.)
 3. **Database → Extensions:** make sure `pg_cron` is enabled, then re-run the last block of the migration (the `cron.schedule` call) if it reported that pg_cron was missing.
 4. **Authentication → Providers:** keep Email enabled and **turn off "Allow new users to sign up"**. Staff accounts are created with the script below, so there is no public sign-up.
-5. **Authentication → Multi-factor:** make sure TOTP (authenticator app) is enabled.
+5. **Staff sign in with a 6-digit code sent by email.** Set this up:
+   - **Authentication → Emails → Templates → Magic Link:** make sure the email shows the code. Replace the body with, for example:
+     `<h2>Your Ozzie's Table sign-in code</h2><p>Enter this code to sign in: <strong>{{ .Token }}</strong></p><p>It expires in one hour. If you didn't ask for it, ignore this email.</p>`
+   - **Authentication → Providers → Email:** keep it enabled; check the email OTP length is **6** and expiry is **3600** seconds.
+   - **Authentication → Emails → SMTP settings:** turn on custom SMTP so codes arrive reliably (Supabase's built-in sender only allows a few emails an hour). With Resend: host `smtp.resend.com`, port `465`, username `resend`, password = your Resend API key, sender `login@ozziestable.com`.
 6. **Project settings → API:** copy the URL, anon key and service role key into your environment (step 4).
 
-### 2. Revolut
+### 2. Revolut (only when online payment is switched on)
 
 1. In Revolut Business, open **Merchant → API** and copy the **public key** and **secret key**. Start with the **Sandbox** keys.
 2. After the first deploy, register the webhook:
@@ -64,11 +77,14 @@ Locally the webhook can't reach you, so the confirmation page asks Revolut direc
 ### 6. Create the owner's sign-in
 
 ```bash
-npm run staff:add -- owner@ozziestable.com "a-long-unique-password" owner
-npm run staff:add -- kitchen@ozziestable.com "another-long-password" kitchen
+npm run staff:add -- owner@ozziestable.com owner
+npm run staff:add -- kitchen@ozziestable.com kitchen
 ```
 
-On first sign-in at `/admin`, each person scans a QR code with an authenticator app. After that, every sign-in needs the 6-digit code. Kitchen accounts see orders and production lists only: no revenue, prices or refunds.
+Each person signs in at `/admin` by entering their email and then the 6-digit code that arrives by email. There are no passwords. Kitchen accounts see orders and production lists only: no revenue, prices or refunds.
+
+Without a terminal: in Supabase add the user under **Authentication → Users → Add user** (any password, tick Auto Confirm), then run in the SQL Editor:
+`insert into public.staff (user_id, email, role) select id, email, 'owner' from auth.users where email = 'owner@example.com';`
 
 ### 7. Deploy to Vercel
 
@@ -84,7 +100,9 @@ Import the GitHub repository, set the environment variables, and deploy. `vercel
 - [ ] Delivery zones, fees, minimum, free-delivery threshold, collection address, phone and WhatsApp set in **Delivery**
 - [ ] Policies, allergen wording, food hygiene rating and company details saved in **Content → Policies and legal**
 - [ ] Page titles and descriptions checked in **Content → Search engines**
-- [ ] Revolut **live** keys set, `REVOLUT_MODE=prod`, live webhook registered, Apple Pay domain registered
+- [ ] Order email set in Dashboard → Delivery, and the payment message customers will see
+- [ ] Supabase sign-in email shows the code, and custom SMTP is set
+- [ ] (When online payment is switched on) Revolut **live** keys set, `PAYMENTS_ENABLED=true`, `REVOLUT_MODE=prod`, live webhook registered, Apple Pay domain registered
 - [ ] Resend domain verified; a test order's confirmation email received
 - [ ] Test order placed, captured, then refunded from the dashboard
 - [ ] Supabase backups confirmed (daily backups are included on paid plans; enable point-in-time recovery if needed)

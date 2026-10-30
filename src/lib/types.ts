@@ -110,6 +110,8 @@ export interface GeneralSettings {
   notify: { ready: boolean; out: boolean; sms: boolean }
   contact: { phone: string; whatsapp: string; whatsappDisplay: string; email: string }
   collection: { address: string; instructions: string }
+  /** Shown to customers when online payment is switched off. */
+  offlinePaymentNote?: string
 }
 
 export interface LegalSettings {

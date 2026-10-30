@@ -17,13 +17,15 @@ interface Props {
   zones: Zone[]
   settings: Pick<GeneralSettings, 'minDeliveryPence' | 'freeOverPence' | 'thresholdBasis' | 'cancelHours' | 'collection'> & { phone: string }
   revolut: { mode: 'prod' | 'sandbox'; publicKey: string }
+  paymentsEnabled: boolean
+  offlineNote: string
 }
 
 type Day = { date: string; ok: boolean; why?: string; deadline?: number }
 type SlotOpt = { id: string; start: string; end: string; ok: boolean; why?: string; left?: number; deadline?: number }
 type Fields = Record<string, string>
 
-export function CheckoutForm({ products, zones, settings, revolut }: Props) {
+export function CheckoutForm({ products, zones, settings, revolut, paymentsEnabled, offlineNote }: Props) {
   const b = useBasket()
   const router = useRouter()
   const [method, setMethod] = useState<Method>('collection')
@@ -156,6 +158,13 @@ export function CheckoutForm({ products, zones, settings, revolut }: Props) {
         if (j.fields?.slotId) loadAvailability(date)
         return
       }
+      if (!j.paymentRequired) {
+        // Online payment is switched off: the order is placed and emailed to the business.
+        b.clear()
+        b.setPrefs({ pending: null, promo: '', method, postcode: method === 'delivery' ? formatPostcode(postcode) : b.prefs.postcode })
+        router.push(`/order/${j.ref}?t=${j.viewToken}`)
+        return
+      }
       b.setPrefs({ pending: { ref: j.ref, token: j.viewToken }, method, postcode: method === 'delivery' ? formatPostcode(postcode) : b.prefs.postcode })
       setPay(j)
     } catch {
@@ -275,7 +284,7 @@ export function CheckoutForm({ products, zones, settings, revolut }: Props) {
           </div>
 
           <div className="panel stepblock">
-            <h3><span className="n">5</span>Pay</h3>
+            <h3><span className="n">5</span>{paymentsEnabled ? 'Pay' : 'Place your order'}</h3>
             <label className="check">
               <input type="checkbox" checked={consent} onChange={(e) => { setConsent(e.target.checked); setFields((f) => ({ ...f, consent: '' })) }} {...inv('consent')} />
               <span>I agree to the <Link className="link" href="/policies" target="_blank">terms and cancellation policy</Link>. Orders can be cancelled for a full refund up to {settings.cancelHours} hours before the slot.</span>
@@ -283,9 +292,13 @@ export function CheckoutForm({ products, zones, settings, revolut }: Props) {
             {err('consent')}
             {err('promo')}
             <button type="button" className="btn btn-order btn-block" disabled={busy} onClick={submit}>
-              {busy ? <><span className="spinner" aria-hidden="true" /> Holding your slot…</> : `Continue to payment · ${money(totals.total)}`}
+              {busy
+                ? <><span className="spinner" aria-hidden="true" /> {paymentsEnabled ? 'Holding your slot…' : 'Placing your order…'}</>
+                : paymentsEnabled ? `Continue to payment · ${money(totals.total)}` : `Place order · ${money(totals.total)}`}
             </button>
-            <p className="small muted">Pay by card, Apple Pay, Google Pay or Revolut Pay on the next step. Wallets appear when your device supports them. Card details go straight to Revolut; we never see or store them.</p>
+            {paymentsEnabled
+              ? <p className="small muted">Pay by card, Apple Pay, Google Pay or Revolut Pay on the next step. Wallets appear when your device supports them. Card details go straight to Revolut; we never see or store them.</p>
+              : <p className="small muted">No payment is taken online. {offlineNote}</p>}
           </div>
         </div>
 

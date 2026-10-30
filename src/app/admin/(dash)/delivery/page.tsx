@@ -1,6 +1,8 @@
 import { requireStaff } from '@/lib/auth'
 import { getSettings, getZones } from '@/lib/data'
 import { checkPostcode } from '@/lib/postcode'
+import { DEFAULT_OFFLINE_NOTE } from '@/lib/email'
+import { env } from '@/lib/env'
 import { money, pounds } from '@/lib/money'
 import { Flash, G } from '@/components/admin/ui'
 import { deleteZone, saveDeliverySettings, saveZone } from '../../actions'
@@ -39,6 +41,11 @@ export default async function Delivery({ searchParams }: { searchParams: Promise
           <div className="fld"><label htmlFor="basis">Apply the minimum and free delivery to</label>
             <select id="basis" name="basis" className="mini" defaultValue={general.thresholdBasis}><option value="after">Subtotal after discounts</option><option value="before">Subtotal before discounts</option></select>
             <p className="hint">Both rules always use the same figure.</p></div>
+        </div>
+        <div className="panel stack" style={G('14px')}>
+          <h3>Payment</h3>
+          <p className="small muted">{env.paymentsEnabled() ? 'Customers pay online at checkout.' : 'Online payment is switched off. Each order is saved here and emailed to the order email above, with the customer’s details, so you can arrange payment.'}</p>
+          <div className="fld"><label htmlFor="offlinePaymentNote">What customers are told about payment</label><textarea id="offlinePaymentNote" name="offlinePaymentNote" className="mini" rows={2} defaultValue={general.offlinePaymentNote || DEFAULT_OFFLINE_NOTE} /><p className="hint">Shown at checkout and on the order page while online payment is off. For example: “We’ll text you our bank details to pay before your slot.”</p></div>
         </div>
         <div className="panel stack" style={G('12px')}>
           <h3>Customer messages</h3>

@@ -37,7 +37,7 @@ export const checkoutSchema = z.object({
 export type CheckoutInput = z.infer<typeof checkoutSchema>
 
 export type CheckoutResult =
-  | { ok: true; ref: string; viewToken: string; publicToken: string; holdUntil: string; totalPence: number }
+  | { ok: true; ref: string; viewToken: string; publicToken: string; holdUntil: string; totalPence: number; paymentRequired: boolean }
   | { ok: false; message: string; fields?: Record<string, string> }
 
 const fullName = (o: Pick<Order, 'customer_first' | 'customer_last'>) => `${o.customer_first} ${o.customer_last}`
@@ -150,6 +150,18 @@ export async function startCheckout(raw: unknown): Promise<CheckoutResult> {
   }
   const h = (held as { r_id: string; r_ref: string; r_view_token: string; r_hold_until: string }[])[0]
 
+  // Online payment switched off: confirm the order straight away and email it to the business.
+  if (!env.paymentsEnabled()) {
+    const { data: result, error: cErr } = await db().rpc('try_confirm_order', { p_order: h.r_id, p_daily_cap: general.dailyCap })
+    if (cErr) throw new Error(cErr.message)
+    if (result !== 'confirmed' && result !== 'already')
+      return { ok: false, message: 'Someone has just taken the last place in that slot. Choose another time.', fields: { slotId: 'Fully booked. Choose another time.' } }
+    await db().from('orders').update({ payment_method: 'Not paid online' }).eq('id', h.r_id)
+    await db().from('order_events').update({ detail: 'Order placed (online payment switched off)' }).eq('order_id', h.r_id).eq('status', 'confirmed')
+    await sendOrderToBusiness(h.r_id)
+    return { ok: true, ref: h.r_ref, viewToken: h.r_view_token, publicToken: '', holdUntil: h.r_hold_until, totalPence: totals.total, paymentRequired: false }
+  }
+
   // Open a Revolut payment for the exact server-calculated total.
   if (existing?.revolut_order_id) await cancelRevolutOrder(existing.revolut_order_id).catch(() => {})
   try {
@@ -163,7 +175,7 @@ export async function startCheckout(raw: unknown): Promise<CheckoutResult> {
       redirectUrl: `${env.siteUrl()}/order/${h.r_ref}?t=${h.r_view_token}`,
     })
     await db().from('orders').update({ revolut_order_id: rev.id, revolut_token: rev.token, payment_status: 'pending' }).eq('id', h.r_id)
-    return { ok: true, ref: h.r_ref, viewToken: h.r_view_token, publicToken: rev.token, holdUntil: h.r_hold_until, totalPence: totals.total }
+    return { ok: true, ref: h.r_ref, viewToken: h.r_view_token, publicToken: rev.token, holdUntil: h.r_hold_until, totalPence: totals.total, paymentRequired: true }
   } catch (e) {
     console.error(e)
     await db().from('orders').update({ status: 'expired', hold_until: null }).eq('id', h.r_id)
@@ -181,6 +193,19 @@ async function markPaidAndNotify(orderId: string, method: string) {
   await sendConfirmation(orderId)
 }
 
+/** Email the full order and customer details to the business's order email (Dashboard → Delivery). */
+async function sendOrderToBusiness(orderId: string) {
+  const [o, { general }] = await Promise.all([loadOrder(orderId), getSettings()])
+  if (!o) return
+  const to = general.contact.email
+  if (!to) {
+    await logEvent(orderId, o.status, 'No order email set in Dashboard → Delivery, so the order email was not sent')
+    return
+  }
+  const a = ownerAlertEmail(o, o.order_items, `${env.siteUrl()}/admin/orders/${o.id}`)
+  await sendMessage({ orderId, to, replyTo: o.customer_email, ...a })
+}
+
 async function sendConfirmation(orderId: string) {
   const [o, { general, content }] = await Promise.all([loadOrder(orderId), getSettings()])
   if (!o) return
@@ -189,7 +214,7 @@ async function sendConfirmation(orderId: string) {
   const a = ownerAlertEmail(o, o.order_items, `${env.siteUrl()}/admin/orders/${o.id}`)
   await Promise.all([
     sendMessage({ orderId, to: o.customer_email, ...c }),
-    general.contact.email ? sendMessage({ orderId, to: general.contact.email, ...a }) : null,
+    general.contact.email ? sendMessage({ orderId, to: general.contact.email, replyTo: o.customer_email, ...a }) : null,
   ])
 }
 

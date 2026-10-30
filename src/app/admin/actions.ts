@@ -86,33 +86,35 @@ async function uploadImage(file: File, folder: string, kind: 'photo' | 'hero' | 
 
 // ---------- sign-in ----------
 
-export async function signIn(_: unknown, f: FormData) {
-  const sb = await authClient()
-  const { error } = await sb.auth.signInWithPassword({ email: str(f, 'email'), password: String(f.get('password') ?? '') })
-  if (error) return { error: 'That email and password don’t match. Try again, or reset your password.' }
-  redirect('/admin/verify')
+/** Step 1 of sign-in: email a 6-digit code to a staff member. No passwords. */
+export async function sendLoginCode(_: unknown, f: FormData): Promise<{ step: 'email' | 'code'; email?: string; error?: string; info?: string }> {
+  const email = str(f, 'email').toLowerCase()
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { step: 'email', error: 'Enter your email address.' }
+  const { data: staff } = await db().from('staff').select('user_id').ilike('email', email).maybeSingle()
+  if (staff) {
+    const sb = await authClient()
+    const { error } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: false } })
+    if (error) {
+      const wait = /rate|seconds|too many/i.test(error.message)
+      return { step: 'email', email, error: wait ? 'Please wait a minute before asking for another code.' : 'We couldn’t send a code just now. Please try again.' }
+    }
+  }
+  // Same answer whether or not the address is staff, so the form doesn't reveal who has access.
+  return { step: 'code', email, info: `If ${email} has dashboard access, a 6-digit code is on its way. It expires in an hour.` }
 }
 
-export async function startEnrolment() {
+/** Step 2: check the code and sign in. */
+export async function verifyLoginCode(_: unknown, f: FormData): Promise<{ step: 'email' | 'code'; email?: string; error?: string; info?: string }> {
+  const email = str(f, 'email').toLowerCase()
+  const token = str(f, 'code').replace(/\D/g, '')
+  if (token.length !== 6) return { step: 'code', email, error: 'Enter the 6-digit code from the email.' }
   const sb = await authClient()
-  const { data: list } = await sb.auth.mfa.listFactors()
-  for (const f of list?.all ?? []) if (f.status !== 'verified') await sb.auth.mfa.unenroll({ factorId: f.id })
-  const { data, error } = await sb.auth.mfa.enroll({ factorType: 'totp', friendlyName: `Authenticator ${new Date().toISOString().slice(0, 10)}` })
-  if (error || !data) return { error: error?.message ?? 'Could not start set-up.' }
-  return { factorId: data.id, qr: data.totp.qr_code, secret: data.totp.secret }
-}
-
-export async function verifyCode(_: unknown, f: FormData) {
-  const sb = await authClient()
-  const factorId = str(f, 'factorId')
-  const code = str(f, 'code').replace(/\s/g, '')
-  const { error } = await sb.auth.mfa.challengeAndVerify({ factorId, code })
-  if (error) return { error: 'That code isn’t right. Check your authenticator app and try again.' }
-  const { data: { user } } = await sb.auth.getUser()
-  const { data: staff } = await db().from('staff').select('role').eq('user_id', user!.id).maybeSingle()
+  const { data, error } = await sb.auth.verifyOtp({ email, token, type: 'email' })
+  if (error || !data.user) return { step: 'code', email, error: 'That code isn’t right or has expired. Check the latest email, or ask for a new code.' }
+  const { data: staff } = await db().from('staff').select('role').eq('user_id', data.user.id).maybeSingle()
   if (!staff) {
     await sb.auth.signOut()
-    return { error: 'This account isn’t set up as staff. Ask the owner to add you.' }
+    return { step: 'email', error: 'This account isn’t set up as staff. Ask the owner to add you.' }
   }
   redirect('/admin')
 }
@@ -370,6 +372,7 @@ export async function saveDeliverySettings(f: FormData) {
       minDeliveryPence: toPence(f.get('minDelivery')),
       freeOverPence: toPence(f.get('freeOver')),
       thresholdBasis: str(f, 'basis') === 'before' ? 'before' : 'after',
+      offlinePaymentNote: str(f, 'offlinePaymentNote'),
       notify: { ready: bool(f, 'notify_ready'), out: bool(f, 'notify_out'), sms: false }, // SMS is a later phase
     })
   })

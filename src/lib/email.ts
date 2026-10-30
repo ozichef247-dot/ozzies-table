@@ -13,6 +13,8 @@ interface Message {
   subject: string
   text: string
   channel?: 'email' | 'sms'
+  /** Where replies go. Defaults to the business's order email. */
+  replyTo?: string
 }
 
 const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!)
@@ -41,7 +43,7 @@ export async function sendMessage(m: Message) {
   try {
     // Replies go to the owner's order email (set in Dashboard → Delivery), not the sending address.
     const { general } = await getSettings()
-    const replyTo = general.contact.email && general.contact.email !== m.to ? [general.contact.email] : undefined
+    const replyTo = m.replyTo ? [m.replyTo] : general.contact.email && general.contact.email !== m.to ? [general.contact.email] : undefined
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
@@ -89,15 +91,30 @@ export function confirmationEmail(o: Order, items: OrderItem[], g: GeneralSettin
   return { subject: `Order ${o.ref} confirmed for ${fmtDate(o.fulfil_date)}, ${o.slot_label}`, text: L.join('\n') }
 }
 
+export const DEFAULT_OFFLINE_NOTE = 'We’ll contact you to confirm your order and arrange payment.'
+
+/** The order email to the business: everything needed to prepare the order and contact the customer. */
 export function ownerAlertEmail(o: Order, items: OrderItem[], adminUrl: string) {
+  const paid = o.payment_status === 'paid'
   const L = [
-    `${o.customer_first} ${o.customer_last} · ${o.customer_phone} · ${o.customer_email}`,
-    `${o.method === 'delivery' ? `Delivery to ${addressLine(o)}` : 'Collection'} · ${fmtDate(o.fulfil_date, true)}, ${o.slot_label}`,
-    '', ...itemLines(items), '', `Total paid: ${money(o.total_pence)}`,
+    `New order ${o.ref}`, '',
+    'CUSTOMER',
+    `Name: ${o.customer_first} ${o.customer_last}`,
+    `Phone: ${o.customer_phone}`,
+    `Email: ${o.customer_email}`, '',
+    o.method === 'delivery' ? 'DELIVERY' : 'COLLECTION',
+    `Date: ${fmtDate(o.fulfil_date, true)}`,
+    `Time: ${o.slot_label}`,
   ]
+  if (o.method === 'delivery') L.push(`Address: ${addressLine(o)}`)
   if (o.notes) L.push(`Customer note: ${o.notes}`)
-  L.push('', `Open in the dashboard: ${adminUrl}`)
-  return { subject: `New order ${o.ref}: ${money(o.total_pence)} for ${fmtDate(o.fulfil_date)} ${o.slot_label}`, text: L.join('\n') }
+  L.push('', 'ORDER', ...itemLines(items), '', `Subtotal: ${money(o.subtotal_pence)}`)
+  if (o.discount_pence) L.push(`Discount (${o.promo_code}): −${money(o.discount_pence)}`)
+  if (o.method === 'delivery') L.push(`Delivery: ${o.delivery_fee_pence ? money(o.delivery_fee_pence) : 'Free'}`)
+  L.push(`Total: ${money(o.total_pence)}`, '')
+  L.push(paid ? `Payment: paid online${o.payment_method ? ` (${o.payment_method})` : ''}` : 'Payment: NOT taken online. Please contact the customer to arrange payment.')
+  L.push('', `Reply to this email to write to the customer.`, `Open in the dashboard: ${adminUrl}`)
+  return { subject: `New order ${o.ref}: ${money(o.total_pence)}, ${o.method} ${fmtDate(o.fulfil_date)} ${o.slot_label}`, text: L.join('\n') }
 }
 
 export function readyEmail(o: Order, g: GeneralSettings) {
