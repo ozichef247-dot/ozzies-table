@@ -13,7 +13,7 @@ import {
   cancelRevolutOrder, captureRevolutOrder, createRevolutOrder, getRevolutOrder, paymentMethodLabel,
   refundRevolutOrder, type RevolutOrder,
 } from './revolut'
-import { cancelledEmail, confirmationEmail, outEmail, ownerAlertEmail, readyEmail, sendMessage } from './email'
+import { cancelledEmail, confirmationEmail, orderReceivedEmail, outEmail, ownerAlertEmail, readyEmail, sendMessage } from './email'
 import { money } from './money'
 
 export const checkoutSchema = z.object({
@@ -193,17 +193,22 @@ async function markPaidAndNotify(orderId: string, method: string) {
   await sendConfirmation(orderId)
 }
 
-/** Email the full order and customer details to the business's order email (Dashboard → Delivery). */
+/**
+ * Online payment off: email the full order and customer details to the business's order email (Dashboard → Delivery),
+ * and send the customer a copy saying we'll be in touch.
+ */
 async function sendOrderToBusiness(orderId: string) {
-  const [o, { general }] = await Promise.all([loadOrder(orderId), getSettings()])
+  const [o, { general, content }] = await Promise.all([loadOrder(orderId), getSettings()])
   if (!o) return
-  const to = general.contact.email
-  if (!to) {
-    await logEvent(orderId, o.status, 'No order email set in Dashboard → Delivery, so the order email was not sent')
-    return
-  }
-  const a = ownerAlertEmail(o, o.order_items, `${env.siteUrl()}/admin/orders/${o.id}`)
-  await sendMessage({ orderId, to, replyTo: o.customer_email, ...a })
+  const orderUrl = `${env.siteUrl()}/order/${o.ref}?t=${o.view_token}`
+  const customer = orderReceivedEmail(o, o.order_items, general, content, orderUrl)
+  const business = ownerAlertEmail(o, o.order_items, `${env.siteUrl()}/admin/orders/${o.id}`)
+  await Promise.all([
+    sendMessage({ orderId, to: o.customer_email, ...customer }),
+    general.contact.email
+      ? sendMessage({ orderId, to: general.contact.email, replyTo: o.customer_email, ...business })
+      : logEvent(orderId, o.status, 'No order email set in Dashboard → Delivery, so the business copy was not sent'),
+  ])
 }
 
 async function sendConfirmation(orderId: string) {

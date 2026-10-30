@@ -93,6 +93,32 @@ export function confirmationEmail(o: Order, items: OrderItem[], g: GeneralSettin
 
 export const DEFAULT_OFFLINE_NOTE = 'We’ll contact you to confirm your order and arrange payment.'
 
+/** Sent to the customer when online payment is off: a copy of the order and how we'll be in touch. */
+export function orderReceivedEmail(o: Order, items: OrderItem[], g: GeneralSettings, c: ContentSettings, orderUrl: string) {
+  const L = [
+    `Hello ${o.customer_first},`, '',
+    'Thank you for your order. We’ve received it and saved your slot.',
+    g.offlinePaymentNote || DEFAULT_OFFLINE_NOTE,
+    'No payment has been taken online.', '',
+    `Order number: ${o.ref}`,
+    `${o.method === 'delivery' ? 'Delivery' : 'Collection'}: ${fmtDate(o.fulfil_date, true)}, ${o.slot_label}`,
+  ]
+  if (o.method === 'delivery') L.push(`Deliver to: ${addressLine(o)}`)
+  else L.push(`Collect from: ${g.collection.address}`, g.collection.instructions)
+  L.push('', 'Your order', ...itemLines(items), '', `Subtotal: ${money(o.subtotal_pence)}`)
+  if (o.discount_pence) L.push(`Discount (${o.promo_code}): −${money(o.discount_pence)}`)
+  if (o.method === 'delivery') L.push(`Delivery: ${o.delivery_fee_pence ? money(o.delivery_fee_pence) : 'Free'}`)
+  L.push(`Total to pay: ${money(o.total_pence)}`)
+  if (o.notes) L.push('', `Your note: ${o.notes}`)
+  L.push(
+    '', `View your order: ${orderUrl}`,
+    `Need to change something? Changes are possible up to ${g.cancelHours} hours before your slot.`,
+    `Questions? Call ${g.contact.phone} or WhatsApp ${g.contact.whatsappDisplay}, quoting ${o.ref}.`,
+    '', 'Ozzie’s Table', c.themeLine,
+  )
+  return { subject: `We’ve received your order ${o.ref} for ${fmtDate(o.fulfil_date)}`, text: L.join('\n') }
+}
+
 /** The order email to the business: everything needed to prepare the order and contact the customer. */
 export function ownerAlertEmail(o: Order, items: OrderItem[], adminUrl: string) {
   const paid = o.payment_status === 'paid'

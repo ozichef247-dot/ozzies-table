@@ -93,7 +93,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
             <p className="small muted">Changes and full refunds are possible up to {general.cancelHours} hours before your slot. Quote <b style={{ color: 'var(--ink)' }}>{o.ref}</b>.</p>
             <ContactBlock g={general} orderRef={o.ref} />
           </div>
-          {paid ? <p className="small muted">A confirmation has been emailed to <b style={{ color: 'var(--ink)' }}>{o.customer_email}</b>.</p> : null}
+          <p className="small muted">{paid ? 'A confirmation has been emailed to' : 'A copy of your order has been emailed to'} <b style={{ color: 'var(--ink)' }}>{o.customer_email}</b>. If it hasn’t arrived in a few minutes, check your spam folder.</p>
           <div><Link className="btn btn-line" href="/menu">Back to menu</Link></div>
         </div>
         <div className="aside">

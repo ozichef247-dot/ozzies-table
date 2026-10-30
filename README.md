@@ -12,6 +12,7 @@ The client has chosen to launch without online payment. With `PAYMENTS_ENABLED` 
 
 - Checkout ends with **Place order**. The order is checked and priced on the server, its slot is booked straight away, and it appears in the dashboard.
 - The full order and customer details are emailed to the **order email** set in Dashboard → Delivery. Replying to that email writes to the customer.
+- The customer is emailed a copy of their order, with the payment message and a note that you'll be in touch.
 - Customers see the payment message set in Dashboard → Delivery → Payment (for example how and when to pay).
 - No Revolut keys are needed. Everything below about Revolut applies only when `PAYMENTS_ENABLED=true`.
 
