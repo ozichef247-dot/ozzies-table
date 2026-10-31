@@ -7,7 +7,7 @@ import { fmtDate } from '@/lib/time'
 import { money } from '@/lib/money'
 import { LIVE_STATUSES, STATUS_LABEL, STATUS_TONE, type Order } from '@/lib/types'
 import { ProfileForm } from '@/components/ProfileForm'
-import { customerSignOut } from './actions'
+import { customerSignOut, customerSignOutEverywhere } from './actions'
 
 export const metadata: Metadata = { title: 'Your account · Ozzie’s Table', robots: { index: false } }
 
@@ -59,6 +59,12 @@ export default async function AccountPage() {
           <h3>Your details</h3>
           <p className="small muted" style={{ marginTop: -6 }}>We use these to fill in checkout for you.</p>
           <ProfileForm p={c.profile} />
+        </div>
+
+        <div className="panel stack" style={{ ['--g' as string]: '8px' }}>
+          <h3>Signed-in devices</h3>
+          <p className="small muted">You stay signed in on devices where you ticked “Keep me signed in”. Lost a phone, or used a shared computer?</p>
+          <form action={customerSignOutEverywhere}><button className="btn btn-line btn-sm">Sign out of all devices</button></form>
         </div>
       </div>
     </section>

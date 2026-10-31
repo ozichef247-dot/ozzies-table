@@ -32,6 +32,7 @@ export function LoginForm() {
           <label htmlFor="code">6-digit code</label>
           <input id="code" name="code" inputMode="numeric" autoComplete="one-time-code" maxLength={7} required autoFocus style={{ letterSpacing: '.3em', fontSize: '1.3rem' }} />
         </div>
+        <label className="check"><input type="checkbox" name="remember" defaultChecked />Keep me signed in on this device</label>
         {state.error ? <p className="err" role="alert">{state.error}</p> : null}
         <button className="btn btn-ink" disabled={pending}>{pending ? 'Checking…' : 'Sign in'}</button>
       </form>

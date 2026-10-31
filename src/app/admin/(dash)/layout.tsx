@@ -2,7 +2,7 @@ import { requireStaff } from '@/lib/auth'
 import { getSettings } from '@/lib/data'
 import { AdminTabs } from '@/components/admin/AdminTabs'
 import { Brand } from '@/components/ShopHeader'
-import { signOut } from '../actions'
+import { signOut, signOutEverywhere } from '../actions'
 
 export default async function Dashboard({ children }: { children: React.ReactNode }) {
   const staff = await requireStaff()
@@ -19,6 +19,9 @@ export default async function Dashboard({ children }: { children: React.ReactNod
       <main className="wrap admin-main">
         <AdminTabs role={staff.role} />
         <div style={{ paddingTop: 22 }}>{children}</div>
+        <form action={signOutEverywhere} style={{ padding: '32px 0 24px' }}>
+          <button className="link small">Sign out of all devices</button> <span className="small muted">(use this if a phone or computer is lost)</span>
+        </form>
       </main>
     </>
   )

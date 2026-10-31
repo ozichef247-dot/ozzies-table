@@ -35,7 +35,7 @@ export async function verifyCustomerCode(_: CodeState, f: FormData): Promise<Cod
   const next = safeNext(str(f, 'next'))
   const token = str(f, 'code').replace(/\D/g, '')
   if (token.length !== 6) return { step: 'code', email, next, error: 'Enter the 6-digit code from the email.' }
-  const sb = await authClient()
+  const sb = await authClient({ remember: f.get('remember') === 'on' })
   const { data, error } = await sb.auth.verifyOtp({ email, token, type: 'email' })
   if (error || !data.user) return { step: 'code', email, next, error: 'That code isn’t right or has expired. Check the latest email, or ask for a new code.' }
   await db().from('customers').upsert({ user_id: data.user.id, email }, { onConflict: 'user_id', ignoreDuplicates: true })
@@ -60,7 +60,14 @@ export async function saveProfile(_: { ok?: string; error?: string }, f: FormDat
 
 export async function customerSignOut() {
   const sb = await authClient()
-  await sb.auth.signOut()
+  await sb.auth.signOut({ scope: 'local' })
   redirect('/')
+}
+
+/** Sign out on every device signed in to this account. */
+export async function customerSignOutEverywhere() {
+  const sb = await authClient()
+  await sb.auth.signOut({ scope: 'global' })
+  redirect('/account/login')
 }
 

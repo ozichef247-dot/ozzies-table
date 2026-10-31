@@ -108,7 +108,7 @@ export async function verifyLoginCode(_: unknown, f: FormData): Promise<{ step: 
   const email = str(f, 'email').toLowerCase()
   const token = str(f, 'code').replace(/\D/g, '')
   if (token.length !== 6) return { step: 'code', email, error: 'Enter the 6-digit code from the email.' }
-  const sb = await authClient()
+  const sb = await authClient({ remember: f.get('remember') === 'on' })
   const { data, error } = await sb.auth.verifyOtp({ email, token, type: 'email' })
   if (error || !data.user) return { step: 'code', email, error: 'That code isn’t right or has expired. Check the latest email, or ask for a new code.' }
   const { data: staff } = await db().from('staff').select('role').eq('user_id', data.user.id).maybeSingle()
@@ -121,7 +121,14 @@ export async function verifyLoginCode(_: unknown, f: FormData): Promise<{ step: 
 
 export async function signOut() {
   const sb = await authClient()
-  await sb.auth.signOut()
+  await sb.auth.signOut({ scope: 'local' })
+  redirect('/admin/login')
+}
+
+/** Sign out on every phone and computer, e.g. after losing a device. */
+export async function signOutEverywhere() {
+  const sb = await authClient()
+  await sb.auth.signOut({ scope: 'global' })
   redirect('/admin/login')
 }
 
