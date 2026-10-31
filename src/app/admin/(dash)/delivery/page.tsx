@@ -51,6 +51,7 @@ export default async function Delivery({ searchParams }: { searchParams: Promise
           <h3>Customer messages</h3>
           <label className="check"><input type="checkbox" name="notify_ready" defaultChecked={general.notify.ready} />Email when an order is ready for collection</label>
           <label className="check"><input type="checkbox" name="notify_out" defaultChecked={general.notify.out} />Email when an order is out for delivery</label>
+          <label className="check"><input type="checkbox" name="notify_completed" defaultChecked={general.notify.completed !== false} />Email when an order is completed (collected or delivered)</label>
           <p className="hint">SMS is planned for a later phase (about 4p a message). The confirmation page only promises messages that are switched on here.</p>
         </div>
         <div><button className="btn btn-ink">Save</button></div>

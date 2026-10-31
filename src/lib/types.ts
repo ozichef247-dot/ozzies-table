@@ -107,7 +107,8 @@ export interface GeneralSettings {
   freeOverPence: number
   thresholdBasis: 'before' | 'after'
   showServes: boolean
-  notify: { ready: boolean; out: boolean; sms: boolean }
+  /** completed: email when an order is marked completed (on unless switched off). */
+  notify: { ready: boolean; out: boolean; sms: boolean; completed?: boolean }
   contact: { phone: string; whatsapp: string; whatsappDisplay: string; email: string }
   collection: { address: string; instructions: string }
   /** Shown to customers when online payment is switched off. */

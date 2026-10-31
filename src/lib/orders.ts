@@ -13,7 +13,7 @@ import {
   cancelRevolutOrder, captureRevolutOrder, createRevolutOrder, getRevolutOrder, paymentMethodLabel,
   refundRevolutOrder, type RevolutOrder,
 } from './revolut'
-import { cancelledEmail, confirmationEmail, orderReceivedEmail, outEmail, ownerAlertEmail, readyEmail, sendMessage } from './email'
+import { cancelledEmail, completedEmail, confirmationEmail, orderReceivedEmail, outEmail, ownerAlertEmail, readyEmail, sendMessage } from './email'
 import { money } from './money'
 
 export const checkoutSchema = z.object({
@@ -328,6 +328,9 @@ export async function advanceOrder(orderId: string, actor: string) {
   if (next === 'out' && general.notify.out) {
     await sendMessage({ orderId, to: o.customer_email, ...outEmail(o) })
     if (general.notify.sms) await sendMessage({ orderId, to: o.customer_phone, channel: 'sms', subject: `Order ${o.ref} is on its way`, text: '' })
+  }
+  if (next === 'completed' && general.notify.completed !== false) {
+    await sendMessage({ orderId, to: o.customer_email, ...completedEmail(o, env.siteUrl()) })
   }
 }
 

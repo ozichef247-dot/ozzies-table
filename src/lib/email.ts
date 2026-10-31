@@ -153,6 +153,21 @@ export function outEmail(o: Order) {
   })
 }
 
+/** Sent when the owner marks an order completed (collected or delivered). */
+export function completedEmail(o: Order, siteUrl: string) {
+  const delivered = o.method === 'delivery'
+  return build(delivered ? `Order ${o.ref} delivered` : `Thanks for collecting order ${o.ref}`, {
+    audience: 'customer', eyebrow: `Order ${o.ref} · Completed`, heading: delivered ? 'Your order has been delivered' : 'Thanks for collecting your order',
+    preheader: 'We hope you enjoy it.',
+    blocks: [
+      { kind: 'p', text: `Hello ${o.customer_first}, ${delivered ? 'your order has been delivered' : 'your order has been collected'}. We hope you enjoy every bite, and thank you for ordering from Ozzie’s Table.` },
+      { kind: 'note', text: 'Storing leftovers? Cool them quickly, keep them in the fridge and eat within 2 days, or freeze them. Reheat until piping hot.' },
+      { kind: 'button', label: 'Order again', href: `${siteUrl}/menu` },
+      { kind: 'small', text: `Anything not right with your order? Reply to this email or call us, quoting ${o.ref}.` },
+    ],
+  })
+}
+
 export function cancelledEmail(o: Order, _g: GeneralSettings, reason: 'owner' | 'slot_full') {
   const blocks: Block[] = []
   if (reason === 'slot_full') {

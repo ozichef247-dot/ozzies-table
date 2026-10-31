@@ -380,7 +380,7 @@ export async function saveDeliverySettings(f: FormData) {
       freeOverPence: toPence(f.get('freeOver')),
       thresholdBasis: str(f, 'basis') === 'before' ? 'before' : 'after',
       offlinePaymentNote: str(f, 'offlinePaymentNote'),
-      notify: { ready: bool(f, 'notify_ready'), out: bool(f, 'notify_out'), sms: false }, // SMS is a later phase
+      notify: { ready: bool(f, 'notify_ready'), out: bool(f, 'notify_out'), completed: bool(f, 'notify_completed'), sms: false }, // SMS is a later phase
     })
   })
 }
