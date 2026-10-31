@@ -39,14 +39,34 @@ export async function verifyCustomerCode(_: CodeState, f: FormData): Promise<Cod
   const { data, error } = await sb.auth.verifyOtp({ email, token, type: 'email' })
   if (error || !data.user) return { step: 'code', email, next, error: 'That code isn’t right or has expired. Check the latest email, or ask for a new code.' }
   await db().from('customers').upsert({ user_id: data.user.id, email }, { onConflict: 'user_id', ignoreDuplicates: true })
+  const { data: profile } = await db().from('customers').select('first_name, phone').eq('user_id', data.user.id).single()
+  if (!profile?.first_name) await seedFromLastOrder(data.user.id, email)
+  const { data: after } = await db().from('customers').select('first_name, last_name, phone').eq('user_id', data.user.id).single()
+  // New account (or details missing): collect name and phone once, then carry on.
+  if (!after?.first_name || !after.last_name || !after.phone) redirect(`/account/details?next=${encodeURIComponent(next)}`)
   redirect(next)
+}
+
+/** Someone who ordered as a guest and then creates an account: start from the details on their latest order. */
+async function seedFromLastOrder(userId: string, email: string) {
+  const { data: o } = await db().from('orders')
+    .select('customer_first, customer_last, customer_phone, address_line1, address_line2, town, postcode')
+    .eq('customer_email', email).not('status', 'in', '(pending,expired)').order('created_at', { ascending: false }).limit(1).maybeSingle()
+  if (!o) return
+  await db().from('customers').update({
+    first_name: o.customer_first, last_name: o.customer_last, phone: o.customer_phone,
+    ...(o.address_line1 ? { address_line1: o.address_line1, address_line2: o.address_line2 ?? '', town: o.town ?? '', postcode: o.postcode ?? '' } : {}),
+    updated_at: new Date().toISOString(),
+  }).eq('user_id', userId)
 }
 
 export async function saveProfile(_: { ok?: string; error?: string }, f: FormData): Promise<{ ok?: string; error?: string }> {
   const c = await getCustomer()
   if (!c) return { error: 'Please sign in again.' }
   const phone = str(f, 'phone')
-  if (phone && phone.replace(/\D/g, '').length < 10) return { error: 'Enter a mobile number with at least 10 digits.' }
+  if (!str(f, 'first') || !str(f, 'last')) return { error: 'Enter your first and last name.' }
+  if (phone.replace(/\D/g, '').length < 10) return { error: 'Enter a mobile number with at least 10 digits.' }
+  if ((str(f, 'line1') || str(f, 'postcode')) && !(str(f, 'line1') && str(f, 'town') && str(f, 'postcode'))) return { error: 'To save an address, fill in address line 1, town and postcode.' }
   const pc = str(f, 'postcode')
   await db().from('customers').upsert({
     user_id: c.userId, email: c.email,
@@ -55,6 +75,7 @@ export async function saveProfile(_: { ok?: string; error?: string }, f: FormDat
     postcode: pc ? formatPostcode(pc) : '', updated_at: new Date().toISOString(),
   }, { onConflict: 'user_id' })
   revalidatePath('/account')
+  if (str(f, 'next')) redirect(safeNext(str(f, 'next')))
   return { ok: 'Your details are saved.' }
 }
 

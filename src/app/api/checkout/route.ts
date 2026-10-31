@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     const customer = await getCustomer()
     const result = await startCheckout(body, customer ? { customerId: customer.userId, email: customer.email } : undefined)
     // Signed-in customers can keep what they entered for next time.
-    if (result.ok && customer && body?.saveDetails) {
+    if (result.ok && customer) {
       await saveCustomerDetails(customer.userId, customer.email, {
         first_name: body.first, last_name: body.last, phone: body.phone,
         ...(body.method === 'delivery' ? { address_line1: body.line1, address_line2: body.line2, town: body.town, postcode: body.postcode } : {}),

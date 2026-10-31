@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { orderReceivedEmail, ownerAlertEmail } from '@/lib/email'
+import { renderEmail } from '@/lib/email-layout'
 import type { ContentSettings, GeneralSettings, Order, OrderItem } from '@/lib/types'
 
 const g = {
-  cancelHours: 48, offlinePaymentNote: 'We’ll text you our bank details to pay before your slot.',
+  cancelHours: 48, notify: { ready: true, out: true, sms: false }, offlinePaymentNote: 'We’ll text you our bank details to pay before your slot.',
   contact: { phone: '01733 000000', whatsappDisplay: '07700 900000', whatsapp: '447700900000', email: 'orders@ozziestable.com' },
   collection: { address: 'Ozzie’s kitchen, Peterborough PE2', instructions: 'Give your order number at the door.' },
 } as GeneralSettings
@@ -34,5 +35,21 @@ describe('order emails with online payment off', () => {
     for (const s of ['Name: Ada Okafor', 'Phone: 07700 900123', 'Email: ada@example.com', 'Address: 12 Thorpe Road', 'Customer note: Ring the bell',
       'Protein: Swap to goat meat (+£4.00)', 'Seasoning: Hot', 'Total: £46.50', 'Payment: NOT taken online'])
       expect(e.text).toContain(s)
+  })
+})
+
+describe('designed emails', () => {
+  const brand = { logo: null, themeLine: 'Tradition in every bite', siteUrl: 'https://www.ozziestable.com', contact: g.contact }
+  it('renders the branded layout and escapes customer text', () => {
+    const e = ownerAlertEmail({ ...o, notes: '<script>x</script>' }, items, 'https://www.ozziestable.com/admin/orders/x')
+    const html = renderEmail(e.doc, brand)
+    expect(html).toContain('Ozzie’s Table')
+    expect(html).toContain('Open in the dashboard')
+    expect(html).toContain('&lt;script&gt;')
+    expect(html).not.toContain('<script>')
+  })
+  it('uses the logo when one is uploaded', () => {
+    const e = orderReceivedEmail(o, items, g, c, 'https://www.ozziestable.com/order/OT-1042?t=abc')
+    expect(renderEmail(e.doc, { ...brand, logo: 'https://cdn.example/logo.png' })).toContain('<img src="https://cdn.example/logo.png"')
   })
 })

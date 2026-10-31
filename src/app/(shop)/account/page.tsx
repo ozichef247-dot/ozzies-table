@@ -16,6 +16,7 @@ type Row = Pick<Order, 'id' | 'ref' | 'view_token' | 'status' | 'method' | 'fulf
 export default async function AccountPage() {
   const c = await getCustomer()
   if (!c) redirect('/account/login')
+  if (!c.profile.first_name || !c.profile.phone) redirect('/account/details?next=/account')
   // Orders placed while signed in, plus earlier guest orders made with the same (verified) email.
   const { data } = await db().from('orders')
     .select('id, ref, view_token, status, method, fulfil_date, slot_label, total_pence, order_items(qty, name, size_label)')

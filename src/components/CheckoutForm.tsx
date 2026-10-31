@@ -44,7 +44,7 @@ export function CheckoutForm({ products, zones, settings, revolut, paymentsEnabl
     first: customer?.first_name ?? '', last: customer?.last_name ?? '', email: customer?.email ?? '', phone: customer?.phone ?? '',
     line1: customer?.address_line1 ?? '', line2: customer?.address_line2 ?? '', town: customer?.town || 'Peterborough', notes: '',
   })
-  const [saveDetails, setSaveDetails] = useState(true)
+  const [otherAddress, setOtherAddress] = useState(false)
   const [consent, setConsent] = useState(false)
   const [discount, setDiscount] = useState(0)
   const [fields, setFields] = useState<Fields>({})
@@ -53,6 +53,14 @@ export function CheckoutForm({ products, zones, settings, revolut, paymentsEnabl
   const [pay, setPay] = useState<null | { ref: string; viewToken: string; publicToken: string; holdUntil: string; totalPence: number }>(null)
   const [secondsLeft, setSecondsLeft] = useState(0)
   const widgetRef = useRef<HTMLDivElement>(null)
+  // Signed in with a saved address for this postcode: show it rather than asking again.
+  const samePostcode = !!customer?.postcode && formatPostcode(customer.postcode) === formatPostcode(postcode)
+  const useSavedAddress = !!customer?.address_line1 && samePostcode && !otherAddress
+  useEffect(() => {
+    if (!customer?.address_line1) return
+    if (useSavedAddress) setD((x) => ({ ...x, line1: customer.address_line1, line2: customer.address_line2, town: customer.town || x.town }))
+    else setD((x) => (x.line1 === customer.address_line1 ? { ...x, line1: '', line2: '' } : x))
+  }, [useSavedAddress]) // eslint-disable-line react-hooks/exhaustive-deps
   const dialogRef = useRef<HTMLDialogElement>(null)
   const alertRef = useRef<HTMLDivElement>(null)
 
@@ -162,7 +170,7 @@ export function CheckoutForm({ products, zones, settings, revolut, paymentsEnabl
       const res = await fetch('/api/checkout', {
         method: 'POST',
         body: JSON.stringify({
-          lines: b.lines, method, date, slotId, postcode, ...d, consent, saveDetails: !!customer && saveDetails, promo: b.prefs.promo || '', existing: b.prefs.pending,
+          lines: b.lines, method, date, slotId, postcode, ...d, consent, promo: b.prefs.promo || '', existing: b.prefs.pending,
         }),
       })
       const j = await res.json()
@@ -295,6 +303,16 @@ export function CheckoutForm({ products, zones, settings, revolut, paymentsEnabl
 
           <div className="panel stepblock">
             <h3><span className="n">4</span>Your details</h3>
+            {customer && customer.first_name && customer.phone ? (
+              <div className="saved-details">
+                <div>
+                  <b>{customer.first_name} {customer.last_name}</b><br />
+                  <span className="muted">{customer.email}<br />{customer.phone}</span>
+                  {method === 'delivery' && useSavedAddress ? <><br /><span className="muted">{[customer.address_line1, customer.address_line2, customer.town, customer.postcode].filter(Boolean).join(', ')}</span></> : null}
+                </div>
+                <Link className="link small" href="/account/details?next=/checkout">Edit</Link>
+              </div>
+            ) : (
             <div className="f2">
               {field('First name', 'first', { ac: 'given-name' })}
               {field('Last name', 'last', { ac: 'family-name' })}
@@ -303,12 +321,17 @@ export function CheckoutForm({ products, zones, settings, revolut, paymentsEnabl
                 : field('Email', 'email', { type: 'email', ac: 'email', im: 'email', hint: 'Required. We email your order details here.' })}
               {field('Mobile number', 'phone', { type: 'tel', ac: 'tel', im: 'tel', hint: 'Only used about this order.' })}
             </div>
-            {method === 'delivery' ? (
+            )}
+            {method === 'delivery' && useSavedAddress ? (
+              <button type="button" className="link small" style={{ alignSelf: 'flex-start' }} onClick={() => { setOtherAddress(true); setD((x) => ({ ...x, line1: '', line2: '' })) }}>Deliver to a different address</button>
+            ) : null}
+            {method === 'delivery' && !useSavedAddress ? (
               <div className="f2">
                 {field('Address line 1', 'line1', { ac: 'address-line1' })}
                 {field('Address line 2', 'line2', { ac: 'address-line2', opt: true })}
                 {field('Town', 'town', { ac: 'address-level2' })}
                 <div className="fld"><label htmlFor="co-pc-ro">Postcode</label><input id="co-pc-ro" className="inp" value={formatPostcode(postcode)} disabled /></div>
+                {customer ? <p className="hint" style={{ gridColumn: '1/-1' }}>We’ll save this address to your account for next time.</p> : null}
               </div>
             ) : null}
             <div className="fld">
@@ -316,7 +339,6 @@ export function CheckoutForm({ products, zones, settings, revolut, paymentsEnabl
               <textarea id="co-notes" rows={3} maxLength={500} value={d.notes} onChange={(e) => set('notes', e.target.value)} placeholder="e.g. Gate code, or call when outside" />
               <p className="hint">Allergy requests can’t be handled through notes. Call us on {settings.phone} before ordering if you have an allergy.</p>
             </div>
-            {customer ? <label className="check"><input type="checkbox" checked={saveDetails} onChange={(e) => setSaveDetails(e.target.checked)} />Save these details to my account for next time</label> : null}
           </div>
 
           <div className="panel stepblock">

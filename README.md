@@ -20,7 +20,7 @@ The client has chosen to launch without online payment. With `PAYMENTS_ENABLED` 
 
 Customers can check out as a guest (the default) or sign in. Signing in and creating an account are the same step: enter an email, then the 6-digit code that arrives. No passwords.
 
-- Signed-in customers get their name, phone and address filled in at checkout, and can tick to save changes.
+- New accounts are asked once for name, mobile and (optionally) a delivery address. Someone who ordered as a guest first starts with the details from that order. At checkout, signed-in customers see their saved details instead of a form; a new delivery address is saved automatically.
 - **Account** (in the header) shows their orders, including earlier guest orders placed with the same email, and their saved details.
 - After a guest order, the confirmation page offers to create an account.
 - Accounts are created by the server, so Supabase's "Allow new users to sign up" can stay off. Customer accounts can't open the dashboard: only emails in the `staff` table can.
@@ -49,8 +49,7 @@ You need accounts with **Supabase**, **Revolut Business** (with online payments/
 3. **Database → Extensions:** make sure `pg_cron` is enabled, then re-run the last block of the migration (the `cron.schedule` call) if it reported that pg_cron was missing.
 4. **Authentication → Providers:** keep Email enabled and **turn off "Allow new users to sign up"**. Staff accounts are created with the script below, so there is no public sign-up.
 5. **Staff sign in with a 6-digit code sent by email.** Set this up:
-   - **Authentication → Emails → Templates → Magic Link:** make sure the email shows the code. Replace the body with, for example:
-     `<h2>Your Ozzie's Table sign-in code</h2><p>Enter this code to sign in: <strong>{{ .Token }}</strong></p><p>It expires in one hour. If you didn't ask for it, ignore this email.</p>`
+   - **Authentication → Emails → Templates → Magic Link:** subject `Your Ozzie's Table sign-in code`; body: paste the whole of `supabase/templates/sign-in-code.html` (the branded email showing the 6-digit code).
    - **Authentication → Providers → Email:** keep it enabled; check the email OTP length is **6** and expiry is **3600** seconds.
    - **Authentication → Emails → SMTP settings:** turn on custom SMTP so codes arrive reliably (Supabase's built-in sender only allows a few emails an hour). With Resend: host `smtp.resend.com`, port `465`, username `resend`, password = your Resend API key, sender `login@ozziestable.com`.
 6. **Project settings → API:** copy the URL, anon key and service role key into your environment (step 4).
