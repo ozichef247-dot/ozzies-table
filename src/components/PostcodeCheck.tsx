@@ -19,6 +19,23 @@ export function PostcodeCheck({ variant }: { variant: 'panel' | 'bar' }) {
   const [busy, setBusy] = useState(false)
   const [res, setRes] = useState<Result | null>(null)
   const [editing, setEditing] = useState(false)
+  const [collectFrom, setCollectFrom] = useState('')
+
+  /** Leave the check: close the pop-up it sits in (if any) and go to the menu. */
+  function goToMenu(el: HTMLElement) {
+    el.closest('dialog')?.close()
+    router.push('/menu')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function chooseCollection(el: HTMLElement, address: string) {
+    setPrefs({ method: 'collection' })
+    setRes(null)
+    setEditing(false)
+    setValue('')
+    setCollectFrom(address)
+    goToMenu(el)
+  }
 
   async function check(e?: React.FormEvent) {
     e?.preventDefault()
@@ -43,6 +60,17 @@ export function PostcodeCheck({ variant }: { variant: 'panel' | 'bar' }) {
         <div className="row between">
           <span>Delivering to <b>{prefs.postcode}</b>. Delivery charge and dates are confirmed at checkout.</span>
           <button className="link small" onClick={() => { setEditing(true); setValue(prefs.postcode) }}>Change</button>
+        </div>
+      </div>
+    )
+  }
+
+  if (variant === 'bar' && collectFrom && !editing && !res) {
+    return (
+      <div className="pcbar" role="status">
+        <div className="row between">
+          <span>You’re collecting from <b>{collectFrom}</b>. Choose your dishes below; you’ll pick a collection time at checkout.</span>
+          <button className="link small" onClick={() => { setCollectFrom(''); setEditing(true) }}>Check delivery instead</button>
         </div>
       </div>
     )
@@ -78,14 +106,14 @@ export function PostcodeCheck({ variant }: { variant: 'panel' | 'bar' }) {
                 </div>
               </div>
             ) : <span>No delivery dates are open at the moment.</span>}
-            {variant === 'panel' ? <div><Link className="btn btn-order" href="/menu">Order food</Link></div> : null}
+            {variant === 'panel' ? <div><Link className="btn btn-order" href="/menu" onClick={(e) => e.currentTarget.closest('dialog')?.close()}>Order food</Link></div> : null}
           </div>
         ) : res.kind === 'area' && res.collection ? (
           <div className="alert warn stack" style={{ ['--g' as string]: '8px' }} role="status">
             <span><b>{res.message}</b> Our delivery area doesn’t cover it at the moment.</span>
             <span>You can collect from <b>{res.collection.address}</b>.</span>
             {res.collection.next ? <span className="num">Next collection: {fmtDate(res.collection.next.date)}, order by {fmtWall(res.collection.next.deadline)}.</span> : null}
-            <div><button className="btn btn-order btn-sm" onClick={() => { setPrefs({ method: 'collection' }); router.push('/menu') }}>Order for collection</button></div>
+            <div><button className="btn btn-order btn-sm" onClick={(e) => chooseCollection(e.currentTarget, res.collection!.address)}>Order for collection</button></div>
           </div>
         ) : (
           <p className="err" role="alert">{res.message}</p>
