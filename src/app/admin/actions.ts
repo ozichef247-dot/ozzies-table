@@ -114,7 +114,7 @@ export async function verifyLoginCode(_: unknown, f: FormData): Promise<{ step: 
   const { data: staff } = await db().from('staff').select('role').eq('user_id', data.user.id).maybeSingle()
   if (!staff) {
     await sb.auth.signOut()
-    return { step: 'email', error: 'This account isn’t set up as staff. Ask the owner to add you.' }
+    return { step: 'email', error: 'You don’t have access to this area.' }
   }
   redirect('/admin')
 }
