@@ -118,6 +118,7 @@ export function CheckoutForm({ products, zones, settings, revolut, paymentsEnabl
       email: d.email,
       createOrder: async () => ({ publicId: pay.publicToken }),
       onSuccess: () => {
+        setPlaced(true)
         b.clear(); b.setPrefs({ pending: null, promo: '' })
         router.push(`/order/${pay.ref}?t=${pay.viewToken}`)
       },
@@ -136,8 +137,18 @@ export function CheckoutForm({ products, zones, settings, revolut, paymentsEnabl
     if (fields[k]) setFields((f) => { const n = { ...f }; delete n[k]; return n })
   }
 
+  const [placed, setPlaced] = useState(false)
+
   async function submit() {
     setAlert(null)
+    // Email is required: the customer's copy of the order is sent there.
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email.trim())) {
+      const msg = d.email.trim() ? 'Enter an email address like name@example.com.' : 'Enter your email address. We send your order details there.'
+      setFields((f) => ({ ...f, email: msg }))
+      setAlert('Please check the highlighted details.')
+      requestAnimationFrame(() => { const el = document.getElementById('co-email'); el?.focus(); el?.scrollIntoView({ block: 'center', behavior: 'smooth' }) })
+      return
+    }
     setBusy(true)
     try {
       const res = await fetch('/api/checkout', {
@@ -160,6 +171,7 @@ export function CheckoutForm({ products, zones, settings, revolut, paymentsEnabl
       }
       if (!j.paymentRequired) {
         // Online payment is switched off: the order is placed and emailed to the business.
+        setPlaced(true) // show "Opening your order…" rather than an empty basket while the page changes
         b.clear()
         b.setPrefs({ pending: null, promo: '', method, postcode: method === 'delivery' ? formatPostcode(postcode) : b.prefs.postcode })
         router.push(`/order/${j.ref}?t=${j.viewToken}`)
@@ -174,6 +186,7 @@ export function CheckoutForm({ products, zones, settings, revolut, paymentsEnabl
     }
   }
 
+  if (placed) return <section className="section"><div className="wrap"><p className="muted">Order placed. Opening your order…</p></div></section>
   if (!b.ready) return <section className="section"><div className="wrap"><p className="muted">Loading…</p></div></section>
   if (!b.lines.length)
     return <section className="section"><div className="wrap stack" style={{ maxWidth: 560 }}><h1 style={{ fontSize: '2.2rem' }}>Your basket is empty</h1><div><Link className="btn btn-order" href="/menu">Order food</Link></div></div></section>
@@ -265,7 +278,7 @@ export function CheckoutForm({ products, zones, settings, revolut, paymentsEnabl
             <div className="f2">
               {field('First name', 'first', { ac: 'given-name' })}
               {field('Last name', 'last', { ac: 'family-name' })}
-              {field('Email', 'email', { type: 'email', ac: 'email', im: 'email', hint: 'Your confirmation goes here.' })}
+              {field('Email', 'email', { type: 'email', ac: 'email', im: 'email', hint: 'Required. We email your order details here.' })}
               {field('Mobile number', 'phone', { type: 'tel', ac: 'tel', im: 'tel', hint: 'Only used about this order.' })}
             </div>
             {method === 'delivery' ? (

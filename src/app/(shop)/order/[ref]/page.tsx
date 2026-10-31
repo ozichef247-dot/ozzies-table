@@ -9,7 +9,6 @@ import { LIVE_STATUSES } from '@/lib/types'
 import { fmtDate } from '@/lib/time'
 import { money } from '@/lib/money'
 import { SummaryLines } from '@/components/OrderSummary'
-import { DEFAULT_OFFLINE_NOTE } from '@/lib/email'
 import { ContactBlock } from '@/components/ContactBlock'
 import { StatusPoller } from '@/components/StatusPoller'
 
@@ -74,7 +73,6 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
             <p className="rule eyebrow">{paid ? 'Order confirmed' : 'Order received'}</p>
             <h1 style={{ fontSize: 'clamp(1.9rem,6vw,2.7rem)' }}>Thank you, {o.customer_first}. {paid ? 'Your order is booked.' : 'We’ve received your order.'}</h1>
             <div className="row"><span className="ref">{o.ref}</span><span className="pill ok">{paid ? 'Paid' : 'Received'}</span></div>
-            {paid ? null : <p className="muted">{general.offlinePaymentNote || DEFAULT_OFFLINE_NOTE} Please keep your order number.</p>}
           </div>
           <div className="panel stack" style={{ ['--g' as string]: '12px' }}>
             <h3>{o.method === 'delivery' ? 'Delivery' : 'Collection'}</h3>
