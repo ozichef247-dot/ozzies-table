@@ -55,8 +55,9 @@ async function logEvent(orderId: string, status: string, detail = '', actor = 's
  * Validate the basket and details, recalculate every price on the server, hold the slot, and open a Revolut payment.
  * Nothing the browser says about prices, notice or capacity is trusted.
  */
-export async function startCheckout(raw: unknown): Promise<CheckoutResult> {
-  const parsed = checkoutSchema.safeParse(raw)
+export async function startCheckout(raw: unknown, account?: { customerId: string; email: string }): Promise<CheckoutResult> {
+  // Signed in: the order always uses the account's verified email.
+  const parsed = checkoutSchema.safeParse(account && raw && typeof raw === 'object' ? { ...raw, email: account.email } : raw)
   if (!parsed.success) {
     const fields: Record<string, string> = {}
     for (const i of parsed.error.issues) fields[String(i.path[0])] ??= i.message
@@ -145,10 +146,11 @@ export async function startCheckout(raw: unknown): Promise<CheckoutResult> {
   if (error) {
     if (error.message.includes('SLOT_FULL'))
       return { ok: false, message: 'Someone has just taken the last place in that slot. Choose another time.', fields: { slotId: 'Fully booked. Choose another time.' } }
-    if (error.message.includes('ORDER_NOT_PENDING')) return startCheckout({ ...input, existing: null })
+    if (error.message.includes('ORDER_NOT_PENDING')) return startCheckout({ ...input, existing: null }, account)
     throw new Error(error.message)
   }
   const h = (held as { r_id: string; r_ref: string; r_view_token: string; r_hold_until: string }[])[0]
+  if (account) await db().from('orders').update({ customer_id: account.customerId }).eq('id', h.r_id)
 
   // Online payment switched off: confirm the order straight away and email it to the business.
   if (!env.paymentsEnabled()) {

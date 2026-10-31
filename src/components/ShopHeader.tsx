@@ -39,6 +39,7 @@ export function ShopHeader({ logo }: { logo: string | null }) {
             <Link key={n.href} href={n.href} aria-current={path === n.href ? 'page' : undefined}>{n.label}</Link>
           ))}
         </nav>
+        <Link className="acctbtn" href="/account" aria-current={path.startsWith('/account') ? 'page' : undefined}>Account</Link>
         <Link className="cartbtn" href="/basket" aria-label={`Basket, ${count} item${count === 1 ? '' : 's'}`} style={{ textDecoration: 'none' }}>
           Basket <span className="n num">{count}</span>
         </Link>

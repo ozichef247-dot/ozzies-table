@@ -3,11 +3,12 @@ import { getProducts, getSettings, getZones } from '@/lib/data'
 import { DEFAULT_OFFLINE_NOTE } from '@/lib/email'
 import { CheckoutForm } from '@/components/CheckoutForm'
 import { env } from '@/lib/env'
+import { getCustomer } from '@/lib/customer'
 
 export const metadata: Metadata = { title: 'Checkout · Ozzie’s Table', robots: { index: false } }
 
 export default async function CheckoutPage() {
-  const [products, { general }, zones] = await Promise.all([getProducts(), getSettings(), getZones()])
+  const [products, { general }, zones, customer] = await Promise.all([getProducts(), getSettings(), getZones(), getCustomer()])
   return (
     <CheckoutForm
       products={products}
@@ -19,6 +20,7 @@ export default async function CheckoutPage() {
       revolut={{ mode: env.revolutMode(), publicKey: env.revolutPublicKey() }}
       paymentsEnabled={env.paymentsEnabled()}
       offlineNote={general.offlinePaymentNote || DEFAULT_OFFLINE_NOTE}
+      customer={customer?.profile ?? null}
     />
   )
 }

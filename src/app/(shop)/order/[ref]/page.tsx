@@ -92,6 +92,13 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
             <ContactBlock g={general} orderRef={o.ref} />
           </div>
           <p className="small muted">{paid ? 'A confirmation has been emailed to' : 'A copy of your order has been emailed to'} <b style={{ color: 'var(--ink)' }}>{o.customer_email}</b>. If it hasn’t arrived in a few minutes, check your spam folder.</p>
+          {!o.customer_id ? (
+            <div className="panel stack" style={{ ['--g' as string]: '8px' }}>
+              <h3>Faster next time?</h3>
+              <p className="small muted">Create a free account with {o.customer_email} and your details are filled in at checkout. This order will show in your order history. No password: we email you a code.</p>
+              <div><Link className="btn btn-line btn-sm" href={`/account/login?email=${encodeURIComponent(o.customer_email)}&next=/account`}>Create an account</Link></div>
+            </div>
+          ) : null}
           <div><Link className="btn btn-line" href="/menu">Back to menu</Link></div>
         </div>
         <div className="aside">

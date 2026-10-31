@@ -16,6 +16,16 @@ The client has chosen to launch without online payment. With `PAYMENTS_ENABLED` 
 - Customers see the payment message set in Dashboard → Delivery → Payment (for example how and when to pay).
 - No Revolut keys are needed. Everything below about Revolut applies only when `PAYMENTS_ENABLED=true`.
 
+## Customer accounts (optional)
+
+Customers can check out as a guest (the default) or sign in. Signing in and creating an account are the same step: enter an email, then the 6-digit code that arrives. No passwords.
+
+- Signed-in customers get their name, phone and address filled in at checkout, and can tick to save changes.
+- **Account** (in the header) shows their orders, including earlier guest orders placed with the same email, and their saved details.
+- After a guest order, the confirmation page offers to create an account.
+- Accounts are created by the server, so Supabase's "Allow new users to sign up" can stay off. Customer accounts can't open the dashboard: only emails in the `staff` table can.
+- Needs `supabase/migrations/20261031000000_customer_accounts.sql` to have been run.
+
 ## How ordering works with online payment (and why it's safe)
 
 1. **The browser only sends choices.** Dish, size, protein, seasoning, quantity, date and slot. Every price, notice period, delivery fee, minimum order and capacity check is recalculated on the server (`src/lib/orders.ts → startCheckout`).
@@ -35,7 +45,7 @@ You need accounts with **Supabase**, **Revolut Business** (with online payments/
 ### 1. Supabase
 
 1. Create a project (region: London).
-2. **SQL editor:** run `supabase/migrations/20261024000000_init.sql`, then `supabase/seed.sql`. (Or with the Supabase CLI: `supabase link` then `supabase db push`, and run the seed.)
+2. **SQL editor:** run each file in `supabase/migrations/` in date order, then `supabase/seed.sql`. (Or with the Supabase CLI: `supabase link` then `supabase db push`, and run the seed.)
 3. **Database → Extensions:** make sure `pg_cron` is enabled, then re-run the last block of the migration (the `cron.schedule` call) if it reported that pg_cron was missing.
 4. **Authentication → Providers:** keep Email enabled and **turn off "Allow new users to sign up"**. Staff accounts are created with the script below, so there is no public sign-up.
 5. **Staff sign in with a 6-digit code sent by email.** Set this up:

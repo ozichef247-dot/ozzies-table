@@ -194,6 +194,8 @@ export interface Order {
   payment_method: string | null
   refunded_pence: number
   revolut_order_id: string | null
+  /** Set when the order was placed while signed in to a customer account. */
+  customer_id?: string | null
   revolut_token: string | null
   internal_notes: string
   created_at: string

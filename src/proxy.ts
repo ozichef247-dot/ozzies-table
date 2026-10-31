@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
-/** Keeps staff sign-in sessions fresh on dashboard pages. Permission checks happen on the server in each page and action. */
+/** Keeps staff and customer sign-in sessions fresh on dashboard, account and checkout pages. Permission checks happen on the server in each page and action. */
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request })
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
@@ -21,4 +21,4 @@ export async function proxy(request: NextRequest) {
   return response
 }
 
-export const config = { matcher: ['/admin/:path*'] }
+export const config = { matcher: ['/admin/:path*', '/account/:path*', '/account', '/checkout', '/api/checkout'] }

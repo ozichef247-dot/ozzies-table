@@ -21,7 +21,7 @@ beforeAll(async () => {
   await db.exec(`create schema auth; create table auth.users(id uuid primary key); create function auth.uid() returns uuid language sql as 'select null::uuid';
     create schema storage; create table storage.buckets(id text primary key, name text, public bool); create role anon; create role authenticated;`)
   const root = path.resolve(__dirname, '..', 'supabase')
-  await db.exec(fs.readFileSync(path.join(root, 'migrations', fs.readdirSync(path.join(root, 'migrations'))[0]), 'utf8'))
+  for (const f of fs.readdirSync(path.join(root, 'migrations')).sort()) await db.exec(fs.readFileSync(path.join(root, 'migrations', f), 'utf8'))
   await db.exec(fs.readFileSync(path.join(root, 'seed.sql'), 'utf8'))
   slotId = (await q<{ id: string }>(`select id from slots where method = 'collection' and start_time = '12:00'`))[0].id // capacity 4
 }, 60_000)

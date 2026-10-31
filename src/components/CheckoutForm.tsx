@@ -11,6 +11,8 @@ import { money } from '@/lib/money'
 import { DOW, DOW_LONG, MON, dow, fmtDate, fmtShortWall, fmtWall } from '@/lib/time'
 import { useBasket } from './basket'
 import { SummaryLines } from './OrderSummary'
+import type { CustomerProfile } from '@/lib/customer'
+import { customerSignOut } from '@/app/(shop)/account/actions'
 
 interface Props {
   products: Product[]
@@ -19,13 +21,15 @@ interface Props {
   revolut: { mode: 'prod' | 'sandbox'; publicKey: string }
   paymentsEnabled: boolean
   offlineNote: string
+  /** Signed-in customer's saved details, or null for guest checkout. */
+  customer: CustomerProfile | null
 }
 
 type Day = { date: string; ok: boolean; why?: string; deadline?: number }
 type SlotOpt = { id: string; start: string; end: string; ok: boolean; why?: string; left?: number; deadline?: number }
 type Fields = Record<string, string>
 
-export function CheckoutForm({ products, zones, settings, revolut, paymentsEnabled, offlineNote }: Props) {
+export function CheckoutForm({ products, zones, settings, revolut, paymentsEnabled, offlineNote, customer }: Props) {
   const b = useBasket()
   const router = useRouter()
   const [method, setMethod] = useState<Method>('collection')
@@ -36,7 +40,11 @@ export function CheckoutForm({ products, zones, settings, revolut, paymentsEnabl
   const [slots, setSlots] = useState<SlotOpt[]>([])
   const [lead, setLead] = useState<number | null>(null)
   const [blocked, setBlocked] = useState<string[]>([])
-  const [d, setD] = useState({ first: '', last: '', email: '', phone: '', line1: '', line2: '', town: 'Peterborough', notes: '' })
+  const [d, setD] = useState({
+    first: customer?.first_name ?? '', last: customer?.last_name ?? '', email: customer?.email ?? '', phone: customer?.phone ?? '',
+    line1: customer?.address_line1 ?? '', line2: customer?.address_line2 ?? '', town: customer?.town || 'Peterborough', notes: '',
+  })
+  const [saveDetails, setSaveDetails] = useState(true)
   const [consent, setConsent] = useState(false)
   const [discount, setDiscount] = useState(0)
   const [fields, setFields] = useState<Fields>({})
@@ -52,7 +60,7 @@ export function CheckoutForm({ products, zones, settings, revolut, paymentsEnabl
   useEffect(() => {
     if (!b.ready) return
     setMethod(b.prefs.method)
-    setPostcode(b.prefs.postcode)
+    setPostcode(b.prefs.postcode || customer?.postcode || '')
   }, [b.ready]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const items = useMemo(() => b.lines.map((l) => priceLine(products.find((p) => p.id === l.productId), { ...l, seasoning: l.seasoning ?? undefined })).filter((r) => r.ok).map((r) => (r as { ok: true; item: OrderItem }).item), [b.lines, products])
@@ -154,7 +162,7 @@ export function CheckoutForm({ products, zones, settings, revolut, paymentsEnabl
       const res = await fetch('/api/checkout', {
         method: 'POST',
         body: JSON.stringify({
-          lines: b.lines, method, date, slotId, postcode, ...d, consent, promo: b.prefs.promo || '', existing: b.prefs.pending,
+          lines: b.lines, method, date, slotId, postcode, ...d, consent, saveDetails: !!customer && saveDetails, promo: b.prefs.promo || '', existing: b.prefs.pending,
         }),
       })
       const j = await res.json()
@@ -211,6 +219,18 @@ export function CheckoutForm({ products, zones, settings, revolut, paymentsEnabl
         <div className="stack" style={{ ['--g' as string]: '22px' }}>
           <div className="row between"><h1 style={{ fontSize: 'clamp(2rem,6vw,2.7rem)' }}>Checkout</h1><Link className="link" href="/basket">Back to basket</Link></div>
           {alert ? <div ref={alertRef} tabIndex={-1} className="alert bad" role="alert">{alert}</div> : null}
+
+          {customer ? (
+            <div className="alert plain row between" style={{ gap: 10 }}>
+              <span>Signed in as <b>{customer.email}</b>. Your saved details are filled in below.</span>
+              <form action={customerSignOut}><button className="link small">Not you? Sign out</button></form>
+            </div>
+          ) : (
+            <div className="co-mode" role="group" aria-label="How would you like to check out?">
+              <button type="button" aria-pressed="true"><b>Continue as guest</b><span>No account needed. Just fill in your details below.</span></button>
+              <Link href="/account/login?next=/checkout"><b>Sign in or create an account</b><span>Your details are filled in for you, and you can see past orders.</span></Link>
+            </div>
+          )}
 
           <div className="panel stepblock">
             <h3><span className="n">1</span>Collection or delivery</h3>
@@ -278,7 +298,9 @@ export function CheckoutForm({ products, zones, settings, revolut, paymentsEnabl
             <div className="f2">
               {field('First name', 'first', { ac: 'given-name' })}
               {field('Last name', 'last', { ac: 'family-name' })}
-              {field('Email', 'email', { type: 'email', ac: 'email', im: 'email', hint: 'Required. We email your order details here.' })}
+              {customer
+                ? <div className="fld"><label htmlFor="co-email">Email</label><input id="co-email" value={d.email} disabled /><p className="hint">Your order details are emailed here.</p></div>
+                : field('Email', 'email', { type: 'email', ac: 'email', im: 'email', hint: 'Required. We email your order details here.' })}
               {field('Mobile number', 'phone', { type: 'tel', ac: 'tel', im: 'tel', hint: 'Only used about this order.' })}
             </div>
             {method === 'delivery' ? (
@@ -294,6 +316,7 @@ export function CheckoutForm({ products, zones, settings, revolut, paymentsEnabl
               <textarea id="co-notes" rows={3} maxLength={500} value={d.notes} onChange={(e) => set('notes', e.target.value)} placeholder="e.g. Gate code, or call when outside" />
               <p className="hint">Allergy requests can’t be handled through notes. Call us on {settings.phone} before ordering if you have an allergy.</p>
             </div>
+            {customer ? <label className="check"><input type="checkbox" checked={saveDetails} onChange={(e) => setSaveDetails(e.target.checked)} />Save these details to my account for next time</label> : null}
           </div>
 
           <div className="panel stepblock">
