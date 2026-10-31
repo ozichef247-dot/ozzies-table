@@ -1,4 +1,5 @@
 import 'server-only'
+import { siteUrl } from '@/lib/site'
 
 function required(name: string, ...alternatives: string[]) {
   for (const n of [name, ...alternatives]) {
@@ -9,7 +10,7 @@ function required(name: string, ...alternatives: string[]) {
 }
 
 export const env = {
-  siteUrl: () => (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.ozziestable.com').replace(/\/$/, ''),
+  siteUrl,
   supabaseUrl: () => required('NEXT_PUBLIC_SUPABASE_URL', 'SUPABASE_URL'),
   // Names set by the Vercel–Supabase integration are accepted as well as our own.
   supabaseAnonKey: () => required('NEXT_PUBLIC_SUPABASE_ANON_KEY', 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'SUPABASE_ANON_KEY', 'SUPABASE_PUBLISHABLE_KEY'),

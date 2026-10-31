@@ -1,9 +1,10 @@
+import { siteUrl } from '@/lib/site'
 import type { MetadataRoute } from 'next'
 export const dynamic = 'force-dynamic'
 import { getPublicMenu } from '@/lib/data'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.ozziestable.com').replace(/\/$/, '')
+  const base = siteUrl()
   const { products } = await getPublicMenu()
   return [
     { url: `${base}/`, changeFrequency: 'weekly', priority: 1 },
