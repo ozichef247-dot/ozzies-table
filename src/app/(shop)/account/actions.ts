@@ -79,10 +79,12 @@ export async function saveProfile(_: { ok?: string; error?: string }, f: FormDat
   return { ok: 'Your details are saved.' }
 }
 
-export async function customerSignOut() {
+/** Sign out on this device. From checkout, go back to checkout so they can continue as a guest or sign in as someone else. */
+export async function customerSignOut(f?: FormData) {
   const sb = await authClient()
   await sb.auth.signOut({ scope: 'local' })
-  redirect('/')
+  const back = f ? str(f, 'next') : ''
+  redirect(back === '/checkout' ? '/checkout' : '/')
 }
 
 /** Sign out on every device signed in to this account. */

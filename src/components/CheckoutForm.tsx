@@ -231,7 +231,7 @@ export function CheckoutForm({ products, zones, settings, revolut, paymentsEnabl
           {customer ? (
             <div className="alert plain row between" style={{ gap: 10 }}>
               <span>Signed in as <b>{customer.email}</b>. Your saved details are filled in below.</span>
-              <form action={customerSignOut}><button className="link small">Not you? Sign out</button></form>
+              <form action={customerSignOut}><input type="hidden" name="next" value="/checkout" /><button className="link small">Not you? Sign out</button></form>
             </div>
           ) : (
             <div className="co-mode" role="group" aria-label="How would you like to check out?">
