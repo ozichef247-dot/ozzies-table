@@ -27,7 +27,7 @@ const KEY = 'ozzies-basket-v1'
 const PREFS = 'ozzies-prefs-v1'
 const Ctx = createContext<BasketCtx | null>(null)
 
-const sameChoice = (a: BasketLine, b: BasketLine) =>
+export const sameChoice = (a: BasketLine, b: BasketLine) =>
   a.productId === b.productId && a.size === b.size && (a.swapId ?? null) === (b.swapId ?? null) &&
   [...a.extraIds].sort().join() === [...b.extraIds].sort().join() && (a.seasoning ?? null) === (b.seasoning ?? null) &&
   (a.note ?? '') === (b.note ?? '')

@@ -9,7 +9,7 @@ import { itemLead } from '@/lib/schedule'
 import { money } from '@/lib/money'
 import { DOW_LONG } from '@/lib/time'
 import { BowlIcon } from './Photo'
-import { useBasket } from './basket'
+import { sameChoice, useBasket } from './basket'
 
 interface Props {
   product: Product
@@ -31,7 +31,7 @@ export function DishOptions({ product: p, categoryName, defaultLead, showServes,
   const [note, setNote] = useState('')
   const [qty, setQty] = useState(1)
   const [error, setError] = useState('')
-  const [added, setAdded] = useState(false)
+  const [addedKey, setAddedKey] = useState<string | null>(null)
 
   // Editing a basket line: start from its choices.
   useEffect(() => {
@@ -49,6 +49,11 @@ export function DishOptions({ product: p, categoryName, defaultLead, showServes,
     const r = priceLine(p, { ...line, extraIds: [...extraIds] })
     return r.ok ? r.item.line_pence : 0
   }, [p, size, swapId, extraIds, seasoning, qty]) // eslint-disable-line react-hooks/exhaustive-deps
+  // How many with exactly these choices are already in the basket, so repeat taps are obvious.
+  const current = { productId: p.id, size, swapId, extraIds: [...extraIds].sort(), seasoning: p.seasoning_enabled ? seasoning : null, note: note.trim(), qty }
+  const choiceKey = JSON.stringify({ ...current, qty: 0 })
+  const inBasket = basket.lines.find((l) => sameChoice(l, current))?.qty ?? 0
+  const added = addedKey === choiceKey && inBasket > 0
   const included = sz?.included || p.included
   const lead = itemLead(p, sz, defaultLead)
 
@@ -65,7 +70,7 @@ export function DishOptions({ product: p, categoryName, defaultLead, showServes,
       return
     }
     basket.add(l)
-    setAdded(true)
+    setAddedKey(choiceKey)
   }
 
   return (
@@ -158,12 +163,12 @@ export function DishOptions({ product: p, categoryName, defaultLead, showServes,
             <button type="button" aria-label="More" onClick={() => setQty((q) => Math.min(20, q + 1))}>+</button>
           </div>
           <button type="button" className="btn btn-order grow" style={{ justifyContent: 'space-between' }} disabled={!p.available || !sz} onClick={submit}>
-            <span>{editIndex != null ? 'Update basket' : 'Add to basket'}</span><span className="num" aria-live="polite">{money(price)}</span>
+            <span>{editIndex != null ? 'Update basket' : added ? (qty > 1 ? `Add ${qty} more` : 'Add another') : 'Add to basket'}</span><span className="num" aria-live="polite">{money(price)}</span>
           </button>
         </div>
         {added ? (
           <p className="small" role="status" style={{ marginTop: 10 }}>
-            Added to your basket. <a className="link" href="/basket">View basket</a> or <a className="link" href="/menu">keep browsing</a>.
+            ✓ You have <b>{inBasket}</b> of {inBasket === 1 ? 'this' : 'these'} in your basket. <a className="link" href="/basket">View basket</a> or <a className="link" href="/menu">keep browsing</a>.
           </p>
         ) : null}
       </div>
