@@ -82,12 +82,15 @@ export function DishOptions({ product: p, categoryName, defaultLead, showServes,
       </div>
       {!p.available ? <div className="alert bad">Sold out for now. Check back soon or choose another dish.</div> : null}
 
+      {p.sizes.length === 1 && p.sizes[0].size === 'Whole' ? (
+        <p className="included"><span><b>{money(p.sizes[0].price_pence)}</b>{sz?.included ? ` · ${sz.included}` : ''}</span></p>
+      ) : (
       <fieldset className="group">
         <legend>Size<span className="req">Required</span></legend>
         <div className="sizes">
           {p.sizes.map((s) => (
             <button key={s.id} type="button" className="size" aria-pressed={s.size === size} onClick={() => setSize(s.size)}>
-              <BowlIcon width={28 + parseFloat(s.size) * 9} />
+              {s.size === 'Whole' ? null : <BowlIcon width={28 + parseFloat(s.size) * 9} />}
               <b>{s.size}</b>
               <span className="price">{money(s.price_pence)}</span>
               {showServes && s.serves ? <small>{s.serves}</small> : null}
@@ -95,10 +98,13 @@ export function DishOptions({ product: p, categoryName, defaultLead, showServes,
             </button>
           ))}
         </div>
-        <p className="included" aria-live="polite">
-          <span><b>{includedText(p, sz?.included)}</b>{included ? ' in the base price.' : '. Add one below if you like.'}</span>
-        </p>
+        {size !== 'Whole' ? (
+          <p className="included" aria-live="polite">
+            <span><b>{includedText(p, sz?.included)}</b>{included ? ' in the base price.' : swaps.length || adds.length ? '. Add one below if you like.' : '.'}</span>
+          </p>
+        ) : null}
       </fieldset>
+      )}
 
       {swaps.length ? (
         <fieldset className="group">
@@ -114,7 +120,7 @@ export function DishOptions({ product: p, categoryName, defaultLead, showServes,
 
       {adds.length ? (
         <fieldset className="group">
-          <legend>Extra protein<span className="req">Optional</span></legend>
+          <legend>{size === 'Whole' ? 'Extras' : 'Extra protein'}<span className="req">Optional</span></legend>
           <div className="opt-list">
             {adds.map((a) => (
               <label key={a.id} className="opt">

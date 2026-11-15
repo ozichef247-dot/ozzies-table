@@ -72,7 +72,7 @@ export default async function Home() {
         <div className="wrap">
           <div className="section-hd"><h2>How ordering works</h2></div>
           <div className="steps">
-            <div className="step"><h3>Choose your bowl</h3><p>Pick a dish and a size from 2 to 5 litres. Choose your seasoning and any extra protein.</p></div>
+            <div className="step"><h3>Choose your bowl</h3><p>Pick a dish and a bowl size. Choose your seasoning and any extra protein.</p></div>
             <div className="step"><h3>Book a date</h3><p>Order at least {general.leadHours} hours ahead.{ln ? ` ${ln}` : ''} The calendar shows the order deadline for every date.</p></div>
             <div className="step"><h3>Collect or get delivery</h3><p>Collect from Ozzie’s kitchen, or get delivery around Peterborough from {money(minFee)}.</p></div>
           </div>

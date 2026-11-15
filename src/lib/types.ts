@@ -1,7 +1,9 @@
 export type Method = 'collection' | 'delivery'
 export const SEASONS = ['Mild', 'Medium', 'Hot'] as const
 export type Season = (typeof SEASONS)[number]
-export const SIZES = ['2L', '3L', '4L', '5L'] as const
+/** Bowl sizes in litres, plus 'Whole' for items sold whole (a loaf or cake). */
+export const SIZES = ['2L', '3L', '4L', '5L', 'Whole'] as const
+export const isBowl = (size: string) => size !== 'Whole'
 export type SizeCode = (typeof SIZES)[number]
 
 export const ALLERGENS = [

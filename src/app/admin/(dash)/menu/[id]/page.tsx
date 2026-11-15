@@ -66,7 +66,7 @@ export default async function EditDish({ params, searchParams }: { params: Promi
                   const v = p.sizes.find((x) => x.size === s)
                   return (
                     <tr key={s}>
-                      <td><label className="check"><input type="checkbox" name={`size_${s}_on`} defaultChecked={!!v} /><b>{s}</b></label></td>
+                      <td><label className="check"><input type="checkbox" name={`size_${s}_on`} defaultChecked={!!v} /><b>{s === 'Whole' ? 'Whole item' : s}</b></label></td>
                       <td><input name={`size_${s}_price`} className="mini w-s" inputMode="decimal" defaultValue={v ? pounds(v.price_pence) : ''} aria-label={`${s} price`} /></td>
                       <td><input name={`size_${s}_lead`} type="number" min={0} className="mini w-s" defaultValue={v?.lead_hours ?? ''} placeholder="—" aria-label={`${s} notice hours`} /></td>
                       <td style={{ minWidth: 180 }}><input name={`size_${s}_included`} className="mini" defaultValue={v?.included ?? ''} placeholder="Same as above" aria-label={`${s} included protein`} /></td>

@@ -89,7 +89,7 @@ export default async function Reports({ searchParams }: { searchParams: Promise<
         </div>
         <div className="panel stack" style={G('4px')}>
           <h3 style={{ marginBottom: 8 }}>Bowls sold by size</h3>
-          {SIZES.map((s) => <div key={s} className="sumrow small"><span>{s}</span><span className="num">{sizes.get(`${parseFloat(s)} litres`) ?? 0}</span></div>)}
+          {SIZES.map((s) => <div key={s} className="sumrow small"><span>{s}</span><span className="num">{sizes.get(s === 'Whole' ? 'Whole' : `${parseFloat(s)} litres`) ?? 0}</span></div>)}
           <h3 style={{ margin: '14px 0 8px' }}>Discount codes</h3>
           {promos.size ? [...promos.entries()].map(([k, v]) => <div key={k} className="sumrow small"><span>{k}</span><span className="num">{v.n} uses · −{money(v.d)}</span></div>) : <p className="muted small">No codes used.</p>}
         </div>

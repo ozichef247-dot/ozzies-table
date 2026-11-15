@@ -15,10 +15,11 @@ export const basketLineSchema = z.object({
 })
 export type BasketLine = z.infer<typeof basketLineSchema>
 
-export const sizeLabel = (size: string) => `${parseFloat(size)} litres`
+export const sizeLabel = (size: string) => (size === 'Whole' ? 'Whole' : `${parseFloat(size)} litres`)
 
-export function includedText(product: Pick<Product, 'included'>, sizeIncluded: string | null | undefined) {
+export function includedText(product: Pick<Product, 'included'>, sizeIncluded: string | null | undefined, size?: string) {
   const t = (sizeIncluded && sizeIncluded.trim()) || product.included.trim()
+  if (size === 'Whole') return t // not a bowl: no protein wording
   return t ? `Includes ${t}` : 'No protein included'
 }
 
@@ -58,7 +59,7 @@ export function priceLine(product: Product | undefined, line: BasketLine): Price
       product_id: product.id,
       name: product.name,
       size_label: sizeLabel(size.size),
-      included_text: includedText(product, size.included),
+      included_text: includedText(product, size.included, size.size),
       protein_swap: swapText,
       extras,
       seasoning,
@@ -72,7 +73,7 @@ export function priceLine(product: Product | undefined, line: BasketLine): Price
 
 /** The one description of an item, used in the basket, checkout, payment, emails, dashboard and kitchen ticket. */
 export function itemMeta(i: Pick<OrderItem, 'size_label' | 'protein_swap' | 'included_text' | 'extras' | 'seasoning' | 'note'>) {
-  const m = [i.size_label, i.protein_swap ? `Protein: ${i.protein_swap}` : i.included_text]
+  const m = [i.size_label, i.protein_swap ? `Protein: ${i.protein_swap}` : i.included_text].filter(Boolean)
   for (const e of i.extras) m.push(`Extra: ${e}`)
   if (i.seasoning) m.push(`Seasoning: ${i.seasoning}`)
   if (i.note) m.push(`Note: ${i.note}`)
