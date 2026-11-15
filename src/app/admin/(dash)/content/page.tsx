@@ -3,8 +3,9 @@ import { getFaqs, getReviews, getSettings } from '@/lib/data'
 import { Photo } from '@/components/Photo'
 import { Brand } from '@/components/ShopHeader'
 import { Flash, G } from '@/components/admin/ui'
+import { db } from '@/lib/supabase/admin'
 import {
-  deleteFaq, deleteReview, saveFaq, saveFontPairing, saveHomepage, saveLegal, saveReview, saveSeo, uploadSiteImage,
+  deleteFaq, deleteReview, saveFaq, saveFontPairing, saveHomepage, saveLegal, savePrivateMode, saveReview, saveSeo, uploadSiteImage,
 } from '../../actions'
 
 const back = '/admin/content'
@@ -35,7 +36,10 @@ function ImageField({ which, label, hint, src, ratio }: { which: string; label: 
 export default async function Content({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string }> }) {
   const sp = await searchParams
   await requireStaff(['owner'])
-  const [{ content: c }, faqs, reviews] = await Promise.all([getSettings(), getFaqs(), getReviews(false)])
+  const [{ content: c }, faqs, reviews, { data: access }] = await Promise.all([
+    getSettings(), getFaqs(), getReviews(false),
+    db().from('site_access').select('enabled, password').eq('id', 1).maybeSingle(),
+  ])
   const l = c.legal
   return (
     <div className="stack" style={G('18px')}>
@@ -137,6 +141,18 @@ export default async function Content({ searchParams }: { searchParams: Promise<
           <div className="fld"><label htmlFor="company">Company details for the footer</label><textarea id="company" name="company" className="mini" rows={2} defaultValue={l.company} placeholder="e.g. Ozzie’s Table Ltd, company no. …, registered address …" /></div>
         </div>
         <div><button className="btn btn-ink btn-sm">Save policies</button></div>
+      </form>
+
+      <form action={savePrivateMode} id="private" className="panel stack" style={G('12px')}>
+        <B /><h3>Private mode</h3>
+        <p className="small muted">When on, visitors see a password page instead of the website. Share the password with the people you want to let in; they enter it once per device. This dashboard always stays reachable. Changing the password asks everyone for the new one.</p>
+        <label className="check"><input type="checkbox" name="private_on" defaultChecked={access?.enabled ?? false} />Only people with the password can see the website</label>
+        <div className="fld" style={{ maxWidth: 360 }}>
+          <label htmlFor="private_password">Password to share</label>
+          <input id="private_password" name="private_password" defaultValue={access?.password ?? ''} autoComplete="off" spellCheck={false} placeholder="At least 6 characters" />
+        </div>
+        <div><button className="btn btn-ink btn-sm">Save private mode</button></div>
+        <p className="hint">Changes take up to a minute to reach every visitor.</p>
       </form>
 
       <form action={saveSeo} className="panel stack" style={G('14px')}>

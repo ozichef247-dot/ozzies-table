@@ -372,3 +372,8 @@ button.switch[aria-pressed="true"] span::after{transform:translateX(18px)}
 .co-mode>* span{font-size:.84rem;color:var(--muted)}
 .co-mode>[aria-pressed="true"]{border:2px solid var(--ink);background:var(--cream-2);padding:13px}
 @media (max-width:520px){.co-mode{grid-template-columns:1fr}}
+
+/* Private mode password page */
+.private-gate{min-height:100svh;display:grid;place-items:center;padding:24px 16px;background:var(--cream)}
+.private-card{width:100%;max-width:440px;background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 10px 30px rgba(30,58,42,.08)}
+.private-brand{background:var(--green);color:var(--on-green);padding:22px 24px;border-bottom:4px solid var(--gold)}

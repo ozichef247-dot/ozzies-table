@@ -16,6 +16,10 @@ The client has chosen to launch without online payment. With `PAYMENTS_ENABLED` 
 - Customers see the payment message set in Dashboard → Delivery → Payment (for example how and when to pay).
 - No Revolut keys are needed. Everything below about Revolut applies only when `PAYMENTS_ENABLED=true`.
 
+## Private mode (friends and family preview)
+
+Dashboard → Content → **Private mode**. When on, every page except `/admin`, `/private` and server callbacks redirects to a password page. Visitors enter the shared password once per device (remembered for 90 days); changing the password asks everyone again. Search engines are told not to index the site while it's on. The password lives in the `site_access` table, which only the server can read (`supabase/migrations/20261116000000_private_mode.sql`).
+
 ## Customer accounts (optional)
 
 Customers can check out as a guest (the default) or sign in. Signing in and creating an account are the same step: enter an email, then the 6-digit code that arrives. No passwords.

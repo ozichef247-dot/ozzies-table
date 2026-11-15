@@ -3,10 +3,12 @@ import { getSettings } from '@/lib/data'
 import { AdminTabs } from '@/components/admin/AdminTabs'
 import { Brand } from '@/components/ShopHeader'
 import { signOut, signOutEverywhere } from '../actions'
+import { getAccess } from '@/lib/access'
+import Link from 'next/link'
 
 export default async function Dashboard({ children }: { children: React.ReactNode }) {
   const staff = await requireStaff()
-  const { content } = await getSettings()
+  const [{ content }, access] = await Promise.all([getSettings(), getAccess()])
   return (
     <>
       <header className="hdr">
@@ -18,6 +20,11 @@ export default async function Dashboard({ children }: { children: React.ReactNod
       </header>
       <main className="wrap admin-main">
         <AdminTabs role={staff.role} />
+        {access.enabled ? (
+          <p className="alert warn small" style={{ marginTop: 14 }}>
+            Private mode is on: visitors need the password to see the website.{staff.role === 'owner' ? <> <Link className="link" href="/admin/content#private">Change</Link></> : null}
+          </p>
+        ) : null}
         <div style={{ paddingTop: 22 }}>{children}</div>
         <form action={signOutEverywhere} style={{ padding: '32px 0 24px' }}>
           <button className="link small">Sign out of all devices</button> <span className="small muted">(use this if a phone or computer is lost)</span>

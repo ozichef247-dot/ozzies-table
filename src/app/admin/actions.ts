@@ -12,6 +12,7 @@ import { advanceOrder, cancelOrder, moveOrder, partialRefund } from '@/lib/order
 import { toPence } from '@/lib/money'
 import { parseOutcodes } from '@/lib/postcode'
 import { slugify } from '@/lib/text'
+import { clearAccessCache } from '@/lib/access'
 import { ALLERGENS, OPEN_STATUSES, SEASONS, SIZES } from '@/lib/types'
 import type { ContentSettings, GeneralSettings } from '@/lib/types'
 import { todayUK } from '@/lib/time'
@@ -463,6 +464,18 @@ export async function saveLegal(f: FormData) {
         hygiene: str(f, 'hygiene'), company: str(f, 'company'),
       },
     })
+  })
+}
+
+/** Private mode: only people with the shared password can see the website. */
+export async function savePrivateMode(f: FormData) {
+  await run(f, '/admin/content', ['owner'], async () => {
+    const enabled = bool(f, 'private_on')
+    const password = str(f, 'private_password')
+    if (enabled && password.length < 6) throw new Error('Choose a password of at least 6 characters.')
+    await check(db().from('site_access').update({ enabled, password, updated_at: new Date().toISOString() }).eq('id', 1))
+    clearAccessCache()
+    return enabled ? 'Private mode is on. Visitors now need the password.' : 'Private mode is off. The website is open to everyone.'
   })
 }
 
