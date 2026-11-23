@@ -11,7 +11,7 @@ export async function Footer() {
         <div className="stack" style={{ ['--g' as string]: '10px' }}>
           <h3>Ozzie’s Table</h3>
           <p className="rule small">{content.themeLine}</p>
-          <p className="muted small">{general.collection.address}</p>
+          {general.offerCollection !== false ? <p className="muted small">{general.collection.address}</p> : <p className="muted small">Delivering around Peterborough</p>}
         </div>
         <div className="stack" style={{ ['--g' as string]: '8px' }}>
           <p className="eyebrow">Questions</p>

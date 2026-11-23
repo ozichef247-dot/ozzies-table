@@ -76,6 +76,8 @@ export async function startCheckout(raw: unknown, account?: { customerId: string
   const [{ general }, products, zones, slots, ctx] = await Promise.all([
     getSettings(), getProducts(), getZones(), getSlots(), getScheduleContext(existing?.id),
   ])
+  if (input.method === 'collection' && general.offerCollection === false)
+    return { ok: false, message: 'We’re only offering delivery at the moment. Please choose delivery.' }
 
   // Price every line from the database.
   const items: OrderItem[] = []

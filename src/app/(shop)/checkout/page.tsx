@@ -21,6 +21,7 @@ export default async function CheckoutPage() {
       paymentsEnabled={env.paymentsEnabled()}
       offlineNote={general.offlinePaymentNote || DEFAULT_OFFLINE_NOTE}
       customer={customer?.profile ?? null}
+      offerCollection={general.offerCollection !== false}
     />
   )
 }

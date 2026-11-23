@@ -16,6 +16,6 @@ export async function POST(req: Request) {
   }
   return NextResponse.json({
     ok: false, kind: r.kind, message: r.message, postcode: r.postcode,
-    collection: r.kind === 'area' ? { address: general.collection.address, next: nextDates(ctx, ['collection'], 1)[0] ?? null } : null,
+    collection: r.kind === 'area' && general.offerCollection !== false ? { address: general.collection.address, next: nextDates(ctx, ['collection'], 1)[0] ?? null } : null,
   })
 }

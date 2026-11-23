@@ -217,7 +217,7 @@ footer .row button{border:0;background:none;color:var(--on-green);font-weight:60
 .dates-list div{display:flex;justify-content:space-between;gap:4px 12px;padding-block:8px;border-bottom:1px solid var(--line);font-size:.92rem;flex-wrap:wrap}
 .dates-list div:last-child{border-bottom:0}
 
-.two{display:grid;gap:24px;align-items:start}
+.two{display:grid;gap:24px;align-items:start;grid-template-columns:minmax(0,1fr)} /* minmax(0,…) stops wide content (the date row) stretching the page on phones */
 @media (min-width:900px){.two{grid-template-columns:minmax(0,1fr) 370px}.two .aside{position:sticky;top:88px}}
 .line{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:14px;align-items:start;padding-block:16px;border-bottom:1px solid var(--line)}
 .line:last-child{border-bottom:0}

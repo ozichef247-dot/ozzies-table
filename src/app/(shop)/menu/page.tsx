@@ -46,7 +46,7 @@ export default async function MenuPage({ searchParams }: { searchParams: Promise
           <h1 style={{ fontSize: 'clamp(2rem,6vw,2.9rem)' }}>Menu</h1>
           <p className="muted">Every dish is cooked to order. Book at least {general.leadHours} hours ahead.{ln ? ` ${ln}` : ''}</p>
         </div>
-        <PostcodeCheck variant="bar" />
+        <PostcodeCheck variant="bar" offerCollection={general.offerCollection !== false} />
       </div>
       <div className="stick" style={{ marginTop: 14 }}>
         <div className="wrap">

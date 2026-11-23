@@ -18,12 +18,14 @@ export default async function HowItWorks() {
         <div className="stack prose" style={{ ['--g' as string]: '12px' }}>
           <p className="eyebrow">How ordering works</p>
           <h1 style={{ fontSize: 'clamp(2rem,6vw,2.9rem)' }}>Cooked to order, never kept warm</h1>
-          <p className="muted">Ozzie only cooks what has been ordered, which is why we ask for notice. Your bowls are cooked for the day you collect or we deliver.</p>
+          <p className="muted">Ozzie only cooks what has been ordered, which is why we ask for notice. Your bowls are cooked for the day {general.offerCollection !== false ? 'you collect or we deliver' : 'we deliver'}.</p>
         </div>
         <div className="steps">
-          <div className="step"><h3>Order {general.leadHours} hours ahead</h3><p>{ln ? `${ln} ` : ''}The checkout calendar shows the order deadline for every date.</p></div>
+          <div className="step"><h3>Order {general.leadHours} hours ahead</h3><p>{ln ? `${ln} ` : ''}Each delivery or collection time closes {general.leadHours} hours before it starts.</p></div>
           <div className="step"><h3>We cook for your date</h3><p>Soups, stews and rice are cooked for your slot and packed in sealed bowls.</p></div>
-          <div className="step"><h3>Collect or get delivery</h3><p>Collect from the kitchen or choose a delivery window anywhere in our delivery area.</p></div>
+          {general.offerCollection !== false
+            ? <div className="step"><h3>Collect or get delivery</h3><p>Collect from the kitchen or choose a delivery window anywhere in our delivery area.</p></div>
+            : <div className="step"><h3>We deliver</h3><p>Choose a delivery window anywhere in our delivery area.</p></div>}
         </div>
         <div id="faq" className="prose">
           <h2>Questions</h2>
@@ -37,7 +39,7 @@ export default async function HowItWorks() {
             <ContactBlock g={general} />
             <p className="small muted">Email: <a href={`mailto:${general.contact.email}`}>{general.contact.email}</a></p>
           </div>
-          <div className="panel stack"><h3>Collection</h3><p>{general.collection.address}</p><p className="small muted">{general.collection.instructions}</p></div>
+          {general.offerCollection !== false ? <div className="panel stack"><h3>Collection</h3><p>{general.collection.address}</p><p className="small muted">{general.collection.instructions}</p></div> : null}
         </div>
       </div>
     </section>

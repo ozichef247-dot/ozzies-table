@@ -12,7 +12,8 @@ export default async function Home() {
   const [{ general, content }, { categories, products }, zones, reviews, ctx] = await Promise.all([
     getSettings(), getPublicMenu(), getZones(), getReviews(true), getScheduleContext(),
   ])
-  const next = nextDates(ctx, ['collection', 'delivery'], 1)[0]
+  const collect = general.offerCollection !== false
+  const next = nextDates(ctx, collect ? ['collection', 'delivery'] : ['delivery'], 1)[0]
   const featured = products.filter((p) => p.featured).slice(0, 4)
   const ln = longNoticeNote(products.filter((p) => p.available), general.leadHours)
   const minFee = zones.length ? Math.min(...zones.map((z) => z.fee_pence)) : 0
@@ -30,7 +31,7 @@ export default async function Home() {
             <p className="lede">{content.intro}</p>
             <div className="row">
               <Link className="btn btn-order" href="/menu">Order food</Link>
-              <DeliveryDialog />
+              <DeliveryDialog offerCollection={collect} />
             </div>
             {next ? (
               <div className="next">
@@ -74,7 +75,9 @@ export default async function Home() {
           <div className="steps">
             <div className="step"><h3>Choose your bowl</h3><p>Pick a dish and a bowl size. Choose your seasoning and any extra protein.</p></div>
             <div className="step"><h3>Book a date</h3><p>Order at least {general.leadHours} hours ahead.{ln ? ` ${ln}` : ''} The calendar shows the order deadline for every date.</p></div>
-            <div className="step"><h3>Collect or get delivery</h3><p>Collect from Ozzie’s kitchen, or get delivery around Peterborough from {money(minFee)}.</p></div>
+            {collect
+              ? <div className="step"><h3>Collect or get delivery</h3><p>Collect from Ozzie’s kitchen, or get delivery around Peterborough from {money(minFee)}.</p></div>
+              : <div className="step"><h3>We deliver</h3><p>Choose a delivery window anywhere in our Peterborough delivery area, from {money(minFee)}.</p></div>}
           </div>
         </div>
       </section>
@@ -105,7 +108,7 @@ export default async function Home() {
 
       <section className="section" id="delivery">
         <div className="wrap">
-          <div className="section-hd"><h2>Delivery and collection</h2></div>
+          <div className="section-hd"><h2>{collect ? 'Delivery and collection' : 'Delivery'}</h2></div>
           <div className="dinfo">
             <div className="panel stack" style={{ ['--g' as string]: '4px' }}>
               <h3 style={{ marginBottom: 8 }}>Delivery areas</h3>
@@ -116,14 +119,14 @@ export default async function Home() {
                 </div>
               ))}
               <p className="small muted" style={{ marginTop: 10 }}>Minimum order {money(general.minDeliveryPence)}. Free delivery over {money(general.freeOverPence)}.</p>
-              <div style={{ marginTop: 12 }}><DeliveryDialog label="Check your postcode" className="btn btn-line btn-sm" /></div>
+              <div style={{ marginTop: 12 }}><DeliveryDialog label="Check your postcode" className="btn btn-line btn-sm" offerCollection={collect} /></div>
             </div>
-            <div className="panel stack" style={{ ['--g' as string]: '8px' }}>
+            {collect ? <div className="panel stack" style={{ ['--g' as string]: '8px' }}>
               <h3>Collection</h3>
               <p>{general.collection.address}</p>
               <p className="small muted">{general.collection.instructions}</p>
               {firstCollection ? <p className="small muted">Collection slots from {firstCollection} on {days.join(', ')}.</p> : null}
-            </div>
+            </div> : null}
           </div>
         </div>
       </section>

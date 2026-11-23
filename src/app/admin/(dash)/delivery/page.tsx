@@ -20,6 +20,8 @@ export default async function Delivery({ searchParams }: { searchParams: Promise
         <input type="hidden" name="back" value={back} />
         <div className="panel stack" style={G('14px')}>
           <h3>Collection point</h3>
+          <label className="check"><input type="checkbox" name="offer_collection" defaultChecked={general.offerCollection !== false} />Offer collection (untick for delivery only)</label>
+          <p className="hint" style={{ marginTop: -6 }}>When unticked, customers can only choose delivery and the collection address is hidden from the website.</p>
           <div className="fld"><label htmlFor="address">Address</label><textarea id="address" name="address" className="mini" rows={2} defaultValue={general.collection.address} /></div>
           <div className="fld"><label htmlFor="instructions">Instructions shown at checkout, on confirmation and in emails</label><textarea id="instructions" name="instructions" className="mini" rows={2} defaultValue={general.collection.instructions} /></div>
         </div>

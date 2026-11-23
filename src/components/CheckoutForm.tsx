@@ -8,7 +8,7 @@ import type { GeneralSettings, Method, OrderItem, Product, Zone } from '@/lib/ty
 import { computeTotals, priceLine } from '@/lib/pricing'
 import { checkPostcode, formatPostcode } from '@/lib/postcode'
 import { money } from '@/lib/money'
-import { DOW, DOW_LONG, MON, dow, fmtDate, fmtShortWall, fmtWall } from '@/lib/time'
+import { DOW, DOW_LONG, MON, dow, fmtDate, fmtWall } from '@/lib/time'
 import { useBasket } from './basket'
 import { SummaryLines } from './OrderSummary'
 import type { CustomerProfile } from '@/lib/customer'
@@ -23,16 +23,18 @@ interface Props {
   offlineNote: string
   /** Signed-in customer's saved details, or null for guest checkout. */
   customer: CustomerProfile | null
+  /** False = delivery only for now. */
+  offerCollection?: boolean
 }
 
 type Day = { date: string; ok: boolean; why?: string; deadline?: number }
 type SlotOpt = { id: string; start: string; end: string; ok: boolean; why?: string; left?: number; deadline?: number }
 type Fields = Record<string, string>
 
-export function CheckoutForm({ products, zones, settings, revolut, paymentsEnabled, offlineNote, customer }: Props) {
+export function CheckoutForm({ products, zones, settings, revolut, paymentsEnabled, offlineNote, customer, offerCollection = true }: Props) {
   const b = useBasket()
   const router = useRouter()
-  const [method, setMethod] = useState<Method>('collection')
+  const [method, setMethod] = useState<Method>(offerCollection ? 'collection' : 'delivery')
   const [postcode, setPostcode] = useState('')
   const [date, setDate] = useState<string | null>(null)
   const [slotId, setSlotId] = useState<string | null>(null)
@@ -67,7 +69,7 @@ export function CheckoutForm({ products, zones, settings, revolut, paymentsEnabl
   // Start from the postcode check and promo chosen earlier.
   useEffect(() => {
     if (!b.ready) return
-    setMethod(b.prefs.method)
+    setMethod(offerCollection ? b.prefs.method : 'delivery')
     setPostcode(b.prefs.postcode || customer?.postcode || '')
   }, [b.ready]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -208,6 +210,10 @@ export function CheckoutForm({ products, zones, settings, revolut, paymentsEnabl
     return <section className="section"><div className="wrap stack" style={{ maxWidth: 560 }}><h1 style={{ fontSize: '2.2rem' }}>Your basket is empty</h1><div><Link className="btn btn-order" href="/menu">Order food</Link></div></div></section>
 
   const slot = slots.find((s) => s.id === slotId)
+  // Only dates a customer could book (closed days and dates already past their notice are left out).
+  const shownDays = days.filter((x) => x.ok || x.why === 'Fully booked' || x.why === 'Not cooked this day')
+  const openSlots = slots.filter((s) => s.ok)
+  const firstClose = openSlots.length ? Math.min(...openSlots.map((s) => s.deadline!)) : null
   const area = settings.collection.address.split(',').slice(-1)[0].trim()
   const minFee = zones.length ? Math.min(...zones.map((z) => z.fee_pence)) : 0
   const err = (k: string) => (fields[k] ? <p className="err" id={`${k}-err`}>{fields[k]}</p> : null)
@@ -241,11 +247,11 @@ export function CheckoutForm({ products, zones, settings, revolut, paymentsEnabl
           )}
 
           <div className="panel stepblock">
-            <h3><span className="n">1</span>Collection or delivery</h3>
-            <div className="segm" role="group" aria-label="Collection or delivery">
+            <h3><span className="n">1</span>{offerCollection ? 'Collection or delivery' : 'Delivery'}</h3>
+            {offerCollection ? <div className="segm" role="group" aria-label="Collection or delivery">
               <button type="button" aria-pressed={method === 'collection'} onClick={() => { setMethod('collection'); setSlotId(null) }}><b>Collect</b><span>Free · {area}</span></button>
               <button type="button" aria-pressed={method === 'delivery'} onClick={() => { setMethod('delivery'); setSlotId(null) }}><b>Delivery</b><span>From {money(minFee)} · min {money(settings.minDeliveryPence)}</span></button>
-            </div>
+            </div> : <p className="small muted">We’re delivering only for now: from {money(minFee)}, minimum order {money(settings.minDeliveryPence)}.</p>}
             {method === 'collection' ? (
               <div className="alert plain small"><b>Collect from:</b> {settings.collection.address}<br />{settings.collection.instructions}</div>
             ) : (
@@ -255,25 +261,26 @@ export function CheckoutForm({ products, zones, settings, revolut, paymentsEnabl
                   <input id="co-postcode" className="inp" value={postcode} onChange={(e) => { setPostcode(e.target.value); setFields((f) => ({ ...f, postcode: '' })) }} onBlur={() => setPostcode(formatPostcode(postcode))} autoComplete="postal-code" placeholder="e.g. PE1 2AB" style={{ textTransform: 'uppercase' }} {...inv('postcode')} />
                   {fields.postcode ? err('postcode') : pc ? (pc.ok
                     ? <p className="hint" style={{ color: 'var(--ok)', fontWeight: 600 }}>We deliver to {pc.postcode}: {money(pc.zone.fee_pence)}, free over {money(settings.freeOverPence)}.</p>
-                    : <p className="err">{pc.message}{pc.kind === 'area' ? ' You can still collect from our kitchen.' : ''}</p>) : <p className="hint">We check this before you pay.</p>}
+                    : <p className="err">{pc.message}{pc.kind === 'area' && offerCollection ? ' You can still collect from our kitchen.' : ''}</p>) : <p className="hint">We check this before you pay.</p>}
                 </div>
-                {totals.shortBy > 0 ? <div className="alert warn small">Delivery orders need a minimum of {money(settings.minDeliveryPence)}. Add {money(totals.shortBy)} more, or switch to collection.</div> : null}
+                {totals.shortBy > 0 ? <div className="alert warn small">Delivery orders need a minimum of {money(settings.minDeliveryPence)}. Add {money(totals.shortBy)} more{offerCollection ? ', or switch to collection' : ''}.</div> : null}
               </>
             )}
           </div>
 
           <div className="panel stepblock">
             <h3><span className="n">2</span>Choose a date</h3>
-            <p className="small muted">{lead != null ? <>Your basket needs at least <b>{lead} hours’</b> notice. </> : null}Each date shows the latest time to order. All times UK.</p>
+            <p className="small muted">These are the days we {offerCollection ? 'cook' : 'deliver'} that you can still book.{lead != null ? <> Your basket needs at least <b>{lead} hours’</b> notice.</> : null}</p>
+            {!shownDays.length ? <div className="alert warn small">No dates are open for booking right now. Please check back soon or contact us.</div> : null}
             <div className="days" role="group" aria-label="Dates">
-              {days.map((x) => (
+              {shownDays.map((x) => (
                 <button key={x.date} type="button" className={`day${x.why === 'Fully booked' ? ' full' : ''}`} disabled={!x.ok} aria-pressed={date === x.date}
                   aria-label={`${fmtDate(x.date, true)}, ${x.ok ? `order by ${fmtWall(x.deadline!)}` : x.why}`}
                   onClick={() => { setDate(x.date); setSlotId(null); setFields((f) => ({ ...f, date: '' })) }}>
                   <span className="dw">{DOW[dow(x.date)]}</span>
                   <span className="dn num">{+x.date.slice(8)}</span>
                   <span className="dw" style={{ letterSpacing: 0, textTransform: 'none', fontWeight: 600 }}>{MON[+x.date.slice(5, 7) - 1]}</span>
-                  <span className="st num">{x.ok ? <>Order by<br />{fmtShortWall(x.deadline!)}</> : x.why}</span>
+                  <span className="st">{x.ok ? 'Available' : x.why}</span>
                 </button>
               ))}
             </div>
@@ -281,7 +288,7 @@ export function CheckoutForm({ products, zones, settings, revolut, paymentsEnabl
           </div>
 
           <div className="panel stepblock">
-            <h3><span className="n">3</span>Choose a time</h3>
+            <h3><span className="n">3</span>{date ? `${method === 'delivery' ? 'Delivery' : 'Collection'} times on ${fmtDate(date, true)}` : 'Choose a time'}</h3>
             {!date ? <p className="muted">Pick a date first.</p> : blocked.length ? (
               <div className="alert warn small">{blocked.join(', ')} {blocked.length > 1 ? 'aren’t' : 'isn’t'} cooked on {DOW_LONG[dow(date)]}s. Choose another day or remove {blocked.length > 1 ? 'them' : 'it'}.</div>
             ) : slots.length && slots.every((s) => !s.ok) ? (
@@ -292,12 +299,13 @@ export function CheckoutForm({ products, zones, settings, revolut, paymentsEnabl
                 {slots.map((s) => (
                   <label key={s.id} className={`opt${s.ok ? '' : ' dis'}`}>
                     <input type="radio" name="slot" checked={slotId === s.id} disabled={!s.ok} onChange={() => { setSlotId(s.id); setFields((f) => ({ ...f, slotId: '' })) }} />
-                    <span className="grow"><b className="num">{s.start}–{s.end}</b><br /><span className="small muted num">{s.ok ? `Order by ${fmtWall(s.deadline!)}` : method === 'delivery' ? 'Delivery window' : 'Collection'}</span></span>
+                    <span className="grow"><b className="num">{s.start}–{s.end}</b><br /><span className="small muted">{method === 'delivery' ? 'Delivery window' : 'Collection time'}</span></span>
                     {s.ok ? (s.left! <= 2 ? <span className="pill warn">{s.left} left</span> : <span className="pill ok">Available</span>) : <span className={`pill ${s.why === 'Fully booked' ? 'bad' : 'muted'}`}>{s.why}</span>}
                   </label>
                 ))}
               </div>
             ) : null}
+            {date && firstClose ? <p className="small muted">{lead != null ? `Each time closes ${lead} hours before it starts. ` : ''}Book by {fmtWall(firstClose)} for the first time on this date. All times UK.</p> : null}
             {err('slotId')}
           </div>
 

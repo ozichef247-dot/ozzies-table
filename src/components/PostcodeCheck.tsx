@@ -12,7 +12,7 @@ type Result =
   | { ok: false; kind: string; message: string; postcode?: string; collection: { address: string; next: { date: string; deadline: number } | null } | null }
 
 /** Postcode check before ordering. A successful check is remembered into checkout. */
-export function PostcodeCheck({ variant }: { variant: 'panel' | 'bar' }) {
+export function PostcodeCheck({ variant, offerCollection = true }: { variant: 'panel' | 'bar'; offerCollection?: boolean }) {
   const { prefs, setPrefs } = useBasket()
   const router = useRouter()
   const [value, setValue] = useState('')
@@ -80,7 +80,7 @@ export function PostcodeCheck({ variant }: { variant: 'panel' | 'bar' }) {
   return (
     <section className={variant === 'bar' ? 'pcbar' : 'stack'} style={{ ['--g' as string]: '12px' }} aria-labelledby={`${id}-title`}>
       {variant === 'bar' ? <h2 id={`${id}-title`}>Do we deliver to you?</h2> : <span id={`${id}-title`} className="vh">Check delivery area</span>}
-      <p className="small muted">Enter your postcode to see the delivery charge, minimum order and the next dates you can book. Outside our area? You can still collect.</p>
+      <p className="small muted">Enter your postcode to see the delivery charge, minimum order and the next dates you can book.{offerCollection ? ' Outside our area? You can still collect.' : ''}</p>
       <form onSubmit={check} className="fld">
         <label htmlFor={id} style={{ fontWeight: 700 }}>Your postcode</label>
         <div className="row" style={{ flexWrap: 'nowrap' }}>

@@ -4,7 +4,7 @@ import { useRef } from 'react'
 import { PostcodeCheck } from './PostcodeCheck'
 
 /** "Check delivery area": a native dialog, so focus is trapped and returned and Escape closes it. */
-export function DeliveryDialog({ label = 'Check delivery area', className = 'btn btn-line' }: { label?: string; className?: string }) {
+export function DeliveryDialog({ label = 'Check delivery area', className = 'btn btn-line', offerCollection = true }: { label?: string; className?: string; offerCollection?: boolean }) {
   const ref = useRef<HTMLDialogElement>(null)
   return (
     <>
@@ -15,7 +15,7 @@ export function DeliveryDialog({ label = 'Check delivery area', className = 'btn
           <h3 id="pc-dialog-title">Check delivery area</h3>
           <button className="x" aria-label="Close" onClick={() => ref.current?.close()}>×</button>
         </div>
-        <div className="sheet-body pad"><PostcodeCheck variant="panel" /></div>
+        <div className="sheet-body pad"><PostcodeCheck variant="panel" offerCollection={offerCollection} /></div>
       </dialog>
     </>
   )

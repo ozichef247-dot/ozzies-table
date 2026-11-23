@@ -113,6 +113,8 @@ export interface GeneralSettings {
   notify: { ready: boolean; out: boolean; sms: boolean; completed?: boolean }
   contact: { phone: string; whatsapp: string; whatsappDisplay: string; email: string }
   collection: { address: string; instructions: string }
+  /** Collection offered to customers (on unless switched off). Off = delivery only. */
+  offerCollection?: boolean
   /** Shown to customers when online payment is switched off. */
   offlinePaymentNote?: string
 }

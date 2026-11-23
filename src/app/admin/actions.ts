@@ -376,6 +376,7 @@ export async function saveDeliverySettings(f: FormData) {
     const { general } = await getSettings()
     await saveGeneral({
       collection: { address: str(f, 'address'), instructions: str(f, 'instructions') },
+      offerCollection: bool(f, 'offer_collection'),
       contact: { phone: str(f, 'phone'), email: str(f, 'email'), whatsappDisplay: str(f, 'whatsappDisplay'), whatsapp: str(f, 'whatsapp').replace(/\D/g, '') },
       minDeliveryPence: toPence(f.get('minDelivery')),
       freeOverPence: toPence(f.get('freeOver')),
